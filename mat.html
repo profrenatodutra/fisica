@@ -3,16 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>📐 Super Desafio da Geometria — Geometria Plana</title>
+<title>📐 Super Desafio da Geometria — 5 Fases</title>
 <!-- ============================================================
-  SUPER DESAFIO DA GEOMETRIA — Mario Bros da Geometria Plana
-  Conteúdo: quadrado, retângulo, paralelogramo, triângulo,
-  trapézio, losango e círculo (áreas, perímetros e propriedades)
-  Questões OBJETIVAS e DISCURSIVAS (resposta numérica)
-  ----------------------------------------------------------------
-  SENHA DO PROFESSOR: professor  (constante DEFAULT_PASS)
-  Ranking na nuvem: Google Sheets (URL já configurada)
-  8 CHANCES por jogador
+  SUPER DESAFIO DA GEOMETRIA — v4.2
+  NOVO: botão de atualizar ranking + AUTO (tempo real, 10s)
+  NOVO: contagem regressiva ao registrar pontuação na nuvem
+  SENHA DO PROFESSOR: professor
 ============================================================ -->
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -63,6 +59,7 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .btn.teal{background:var(--teal);box-shadow:0 6px 0 #00655f}.btn.teal:active{box-shadow:0 2px 0 #00655f}
 .btn.gray{background:#8d8d8d;box-shadow:0 6px 0 #4c4c4c}.btn.gray:active{box-shadow:0 2px 0 #4c4c4c}
 .btn.sm{padding:9px 13px;font-size:10px}
+.btn:disabled{opacity:.6;cursor:wait}
 .btn-block{width:100%}
 .err-msg{display:none;color:var(--dred);background:#ffd9d9;border:3px solid var(--red);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;margin-top:12px}
 .err-msg.show{display:block}
@@ -72,9 +69,10 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .rule b{display:block;font-size:13.5px}.rule span{font-size:12px;color:var(--muted)}
 .keys{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;justify-content:center;align-items:center}
 .key{background:#111;color:#fff;border-radius:6px;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:9px;border:2px solid #000;box-shadow:0 3px 0 #000}
+.rank-tools{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 #scr-game{padding:12px 8px 20px;justify-content:flex-start}
 .game-shell{width:min(980px,100%)}
-.hud{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;background:#000;border:4px solid #000;border-radius:10px 10px 0 0;padding:10px 14px;font-family:'Press Start 2P',monospace;color:#fff;font-size:11px}
+.hud{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center;background:#000;border:4px solid #000;border-radius:10px 10px 0 0;padding:10px 14px;font-family:'Press Start 2P',monospace;color:#fff;font-size:10px}
 .hud .hs{color:var(--yellow)} .hud .hc{color:#7ce838} .hud .hq{color:#7bd0ff}
 .hud .hl{letter-spacing:1px;font-size:12px}
 .hud .hl .off{opacity:.25;filter:grayscale(1)}
@@ -88,6 +86,10 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .overlay{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.72);z-index:5}
 .overlay.show{display:flex}
 .overlay .pix{color:#fff;font-size:clamp(15px,3vw,24px);text-shadow:3px 3px 0 #000}
+.pintro{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.66);z-index:6;text-align:center}
+.pintro.show{display:flex}
+.pintro .pix{color:#fff;text-shadow:3px 3px 0 #000;font-size:clamp(18px,3.6vw,28px)}
+.pintro .psub{color:#ffd800;font-family:'Press Start 2P',monospace;font-size:clamp(9px,1.8vw,13px);margin-top:14px;text-shadow:2px 2px 0 #000;line-height:1.8}
 .touch{position:absolute;inset:auto 0 0 0;display:none;justify-content:space-between;padding:12px 14px;z-index:4;pointer-events:none}
 .touch button{pointer-events:auto;width:64px;height:64px;border-radius:50%;border:4px solid #000;background:rgba(255,255,255,.85);font-size:24px;font-family:'Press Start 2P',monospace;color:#000;box-shadow:0 5px 0 rgba(0,0,0,.4);touch-action:none;user-select:none;-webkit-user-select:none}
 .touch button:active{transform:translateY(4px);box-shadow:none}
@@ -97,6 +99,8 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .modal.open{display:flex}
 .mbox{width:min(600px,100%);max-height:94vh;overflow:auto;padding:22px;animation:pop .25s}
 .mbox h2{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--dred);display:flex;align-items:center;gap:10px}
+.savebar{height:16px;background:#0f1637;border:3px solid #000;border-radius:9px;overflow:hidden;margin-top:14px}
+.savebar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#7ce838,#43b047);transition:width .95s linear}
 .qbadge{background:var(--yellow);border:3px solid #000;border-radius:6px;padding:8px;font-size:16px;box-shadow:0 4px 0 #7a3c00;animation:bounce 1.6s infinite}
 .qtext{font-size:16.5px;font-weight:700;margin-top:14px;line-height:1.5}
 .opts{display:grid;gap:9px;margin-top:14px}
@@ -125,7 +129,7 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .pod .pt{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--dred);margin-top:4px}
 .pod.p1{transform:scale(1.1);background:#fff8d6}
 .tbl-wrap{overflow:auto;border:3px solid #000;border-radius:8px;background:#fff}
-table{width:100%;border-collapse:collapse;min-width:640px}
+table{width:100%;border-collapse:collapse;min-width:700px}
 th{background:var(--yellow);padding:10px 12px;text-align:left;font-family:'Press Start 2P',monospace;font-size:9px;border-bottom:3px solid #000}
 td{padding:9px 12px;border-top:2px solid #eadfb8;font-size:13.5px}
 tbody tr:hover{background:#fff7d9}
@@ -155,7 +159,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.ok{border-color:var(--green)}#toast.err{border-color:var(--red)}
 .mt{margin-top:14px}.mt2{margin-top:22px}.center{text-align:center}.sub{color:var(--muted)}
-@media(max-width:640px){.rules,.stats,.statgrid{grid-template-columns:1fr 1fr}.hud{font-size:9px;gap:6px 10px}}
+@media(max-width:640px){.rules,.stats,.statgrid{grid-template-columns:1fr 1fr}.hud{font-size:8px;gap:6px 9px}}
 @media(max-width:430px){.rules,.statgrid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -167,7 +171,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
 <section class="screen active" id="scr-login">
   <div style="margin-bottom:18px"><span class="qblock">?</span></div>
   <h1 class="title">SUPER GEO<span class="big">DESAFIO DA GEOMETRIA</span></h1>
-  <p class="pix center" style="font-size:9px;color:#fff;text-shadow:2px 2px 0 #000;margin-top:12px">📐 QUADRADO • TRIÂNGULO • TRAPÉZIO • CÍRCULO 📐</p>
+  <p class="pix center" style="font-size:9px;color:#fff;text-shadow:2px 2px 0 #000;margin-top:12px">📐 5 FASES • QUADRADO • TRIÂNGULO • TRAPÉZIO • CÍRCULO 📐</p>
   <div class="retro" style="width:min(440px,100%);padding:24px;margin-top:22px">
     <form id="form-login">
       <label class="lbl" for="inp-name">Nome do jogador</label>
@@ -189,14 +193,14 @@ tr.me{background:#fff3bf!important;font-weight:800}
 
 <!-- ===================== BRIEFING ===================== -->
 <section class="screen" id="scr-brief">
-  <div class="retro" style="width:min(580px,100%);padding:24px">
+  <div class="retro" style="width:min(600px,100%);padding:24px">
     <h1 class="title" style="color:#fff;font-size:15px;text-shadow:3px 3px 0 #000">🗺️ COMO JOGAR</h1>
     <p class="center pix" style="font-size:9px;margin-top:10px" id="brief-player">—</p>
     <div class="rules">
-      <div class="rule"><span class="ic">❤️</span><div><b>8 chances</b><span>Errar pergunta, tocar o monstro ou cair no buraco custa 1 chance.</span></div></div>
-      <div class="rule"><span class="ic">❓</span><div><b>Blocos "?"</b><span>Pule e bata com a cabeça para abrir a questão de Geometria.</span></div></div>
-      <div class="rule"><span class="ic">✏️</span><div><b>Objetivas e discursivas</b><span>Objetivas: escolha A, B, C ou D. Discursivas: digite o número do resultado.</span></div></div>
-      <div class="rule"><span class="ic">🚩</span><div><b>Bandeira</b><span>Moedas valem +10, pisão no monstro +50 e a bandeira +300!</span></div></div>
+      <div class="rule"><span class="ic">🗺️</span><div><b>5 fases temáticas</b><span>Quadrado/Retângulo → Triângulo → Trapézio/Losango → Círculo → Castelo Mista!</span></div></div>
+      <div class="rule"><span class="ic">❤️</span><div><b>8 chances</b><span>As chances valem para o jogo TODO — zerei = Game Over.</span></div></div>
+      <div class="rule"><span class="ic">❓</span><div><b>Blocos "?"</b><span>Bata com a cabeça para abrir a questão da fase (objetiva ou discursiva).</span></div></div>
+      <div class="rule"><span class="ic">☁️</span><div><b>Ranking ao vivo</b><span>Ao terminar, sua pontuação é registrada na nuvem com contagem regressiva!</span></div></div>
     </div>
     <p class="center sub mt" style="font-size:12.5px" id="brief-count"></p>
     <div class="keys">
@@ -217,6 +221,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
   <div class="game-shell">
     <div class="hud">
       <span>📐 <span class="hs" id="h-name">—</span></span>
+      <span>FASE <span class="hs" id="h-phase">1/5</span></span>
       <span>PONTOS <span class="hs" id="h-score">0</span></span>
       <span>🪙×<span class="hc" id="h-coins">0</span></span>
       <span>❓ <span class="hq" id="h-q">0/0</span></span>
@@ -230,10 +235,16 @@ tr.me{background:#fff3bf!important;font-weight:800}
     <div class="progress"><i id="h-prog" style="width:0%"></i></div>
     <div class="stage">
       <canvas id="cv" width="960" height="528"></canvas>
+      <div class="pintro" id="pintro"><span class="pix" id="pi-title">FASE 1</span><span class="psub" id="pi-sub">—</span></div>
+      <div class="overlay" id="clearOverlay">
+        <span class="pix" id="cl-title">FASE COMPLETA!</span>
+        <div class="pix" id="cl-lines" style="font-size:10px;color:#ffd800;text-align:center;line-height:2.2;text-shadow:2px 2px 0 #000"></div>
+        <button class="btn green" id="btn-clear-next">PRÓXIMA FASE ▶</button>
+      </div>
       <div class="overlay" id="pauseOverlay">
         <span class="pix">PAUSA</span>
         <button class="btn green" id="btn-resume">▶ CONTINUAR</button>
-        <button class="btn blue sm" id="btn-restart">🔄 RECOMEÇAR</button>
+        <button class="btn blue sm" id="btn-restart">🔄 RECOMEÇAR DO ZERO</button>
         <button class="btn gray sm" id="btn-quit2">✕ SAIR SEM SALVAR</button>
       </div>
       <div class="touch">
@@ -254,11 +265,22 @@ tr.me{background:#fff3bf!important;font-weight:800}
     <div id="qz-disc" style="display:none">
       <label class="lbl">Sua resposta (apenas o número)</label>
       <input class="field" id="qz-input" inputmode="decimal" maxlength="14" placeholder="Ex.: 36 ou 12,56" autocomplete="off">
-      <p class="sub" style="font-size:12px;margin-top:6px">💡 Use vírgula ou ponto para decimais. Não precisa digitar a unidade (cm², m…). Pressione ENTER para responder.</p>
+      <p class="sub" style="font-size:12px;margin-top:6px">💡 Use vírgula ou ponto para decimais. Não precisa digitar a unidade. ENTER responde.</p>
     </div>
     <div class="fbq" id="qz-fb"><h3 id="qz-fb-title"></h3><p id="qz-fb-text"></p></div>
     <button class="btn teal btn-block mt" id="btn-qz-confirm" style="display:none">RESPONDER ✔</button>
     <button class="btn green btn-block mt" id="btn-qz-next" style="display:none">CONTINUAR ▶</button>
+  </div>
+</div>
+
+<!-- ===================== MODAL SALVANDO (contagem) ===================== -->
+<div class="modal" id="modal-save">
+  <div class="retro mbox" style="width:min(430px,100%);text-align:center">
+    <h2 style="justify-content:center">☁️ REGISTRANDO PONTUAÇÃO</h2>
+    <div id="sv-count" style="font-family:'Press Start 2P',monospace;font-size:clamp(44px,12vw,80px);color:var(--dred);text-shadow:4px 4px 0 #ffd800;margin-top:10px">5</div>
+    <p class="pix" id="sv-status" style="font-size:9px;line-height:1.9;margin-top:8px;color:#7a5b1e">ENVIANDO PARA A NUVEM…</p>
+    <div class="savebar"><i id="sv-bar"></i></div>
+    <p class="sub" style="font-size:11px;margin-top:10px">Aguarde: estamos gravando na planilha e atualizando o ranking 📊</p>
   </div>
 </div>
 
@@ -271,9 +293,11 @@ tr.me{background:#fff3bf!important;font-weight:800}
     <p class="pix" style="font-size:8px;color:#7a5b1e;margin-top:4px">PONTOS</p>
     <div class="stats">
       <div class="stat"><b id="ov-pos">—</b><span>Posição no ranking</span></div>
+      <div class="stat"><b id="ov-phase">1/5</b><span>Fase alcançada</span></div>
       <div class="stat"><b id="ov-correct">0/0</b><span>Questões certas</span></div>
       <div class="stat"><b id="ov-coins">0</b><span>Moedas 🪙</span></div>
       <div class="stat"><b id="ov-streak">0</b><span>Melhor sequência 🔥</span></div>
+      <div class="stat"><b id="ov-time">0s</b><span>Tempo total</span></div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
       <button class="btn gray" id="btn-ov-home">🏠 INÍCIO</button>
@@ -285,8 +309,14 @@ tr.me{background:#fff3bf!important;font-weight:800}
 
 <!-- ===================== RANKING ===================== -->
 <section class="screen" id="scr-rank">
-  <div class="retro" style="width:min(680px,100%);padding:24px">
+  <div class="retro" style="width:min(720px,100%);padding:24px">
     <h1 class="title" style="color:#fff;text-shadow:3px 3px 0 #000;font-size:15px">🏆 RANKING</h1>
+    <p class="center sub" id="rank-updated" style="font-size:11px;margin-top:8px">—</p>
+    <div class="rank-tools">
+      <button class="btn blue sm" id="btn-rank-refresh">🔄 ATUALIZAR AGORA</button>
+      <button class="btn teal sm" id="btn-rank-auto">⏱ AUTO: OFF</button>
+    </div>
+    <p class="center sub" style="font-size:10.5px;margin-top:8px">💡 No modo AUTO o ranking se atualiza sozinho a cada 10s — ideal para projetar no telão!</p>
     <div id="rank-list" class="mt"></div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
       <button class="btn gray" id="btn-rank-home">🏠 INÍCIO</button>
@@ -321,13 +351,14 @@ tr.me{background:#fff3bf!important;font-weight:800}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>#</th><th>Nome</th><th>Série</th><th>Turma</th><th>Pontos</th><th>Acertos</th><th>Moedas</th><th>Seq 🔥</th><th>Tempo</th><th>Resultado</th><th>Data</th></tr></thead>
+          <thead><tr><th>#</th><th>Nome</th><th>Série</th><th>Turma</th><th>Fase</th><th>Pontos</th><th>Acertos</th><th>Moedas</th><th>Seq 🔥</th><th>Tempo</th><th>Resultado</th><th>Data</th></tr></thead>
           <tbody id="rank-body"></tbody>
         </table>
       </div>
       <div class="export-bar">
-        <button class="btn blue" id="btn-xls">📊 EXPORTAR EXCEL (.XLS)</button>
-        <button class="btn green" id="btn-csv">📄 EXPORTAR CSV</button>
+        <button class="btn teal sm" id="btn-panel-refresh">🔄 ATUALIZAR DA NUVEM</button>
+        <button class="btn blue sm" id="btn-xls">📊 EXPORTAR EXCEL (.XLS)</button>
+        <button class="btn green sm" id="btn-csv">📄 EXPORTAR CSV</button>
         <button class="btn sm" style="background:#555;box-shadow:0 4px 0 #222;margin-left:auto" id="btn-clear-rank">🗑️ LIMPAR RANKING</button>
       </div>
     </div>
@@ -347,15 +378,17 @@ tr.me{background:#fff3bf!important;font-weight:800}
       <label class="lbl">Nova senha (opcional)</label>
       <input class="field" type="password" id="cfg-new-pass" placeholder="Nova senha" style="max-width:340px">
       <h3 style="font-size:15px;margin-top:22px">🎮 Regras do jogo</h3>
-      <label class="lbl">Blocos "?" por partida (= questões)</label>
+      <label class="lbl">Questões por fase (× 5 fases)</label>
       <select class="field" id="cfg-count" style="max-width:340px">
-        <option value="6">6 blocos</option><option value="8">8 blocos</option>
-        <option value="10">10 blocos</option><option value="12">12 blocos</option>
-        <option value="16">16 blocos</option><option value="20">20 blocos</option>
+        <option value="3">3 por fase (15 no total)</option>
+        <option value="4">4 por fase (20 no total)</option>
+        <option value="5">5 por fase (25 no total)</option>
+        <option value="6">6 por fase (30 no total)</option>
+        <option value="8">8 por fase (40 no total)</option>
       </select>
       <div class="ans-row mt"><input type="checkbox" id="cfg-sound"><label for="cfg-sound" style="font-weight:700">Efeitos sonoros 🔊</label></div>
       <h3 style="font-size:15px;margin-top:22px">☁️ Ranking na nuvem (Google Sheets)</h3>
-      <p class="sub" style="font-size:12px;margin-top:4px">URL do App da Web do Apps Script — já vem configurada. Altere só se trocar de planilha.</p>
+      <p class="sub" style="font-size:12px;margin-top:4px">URL do App da Web — já vem configurada. Altere só se trocar de planilha.</p>
       <input class="field" id="cfg-sheet-url" placeholder="https://script.google.com/macros/s/…/exec" style="max-width:520px">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
         <button class="btn green sm" id="btn-test-cloud">🔌 TESTAR CONEXÃO</button>
@@ -366,7 +399,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
         <h3>⚠️ Zona de perigo (não pode ser desfeito)</h3>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
           <button class="btn gray sm" id="btn-reset-qs">♻️ RESTAURAR QUESTÕES ORIGINAIS</button>
-          <button class="btn sm" style="background:var(--red);box-shadow:0 4px 0 var(--dred)" id="btn-wipe">💥 APAGAR TODOS OS DADOS</button>
+          <button class="btn sm" style="background:var(--red);box-shadow:0 3px 0 var(--dred)" id="btn-wipe">💥 APAGAR TODOS OS DADOS</button>
         </div>
       </div>
     </div>
@@ -423,12 +456,13 @@ tr.me{background:#fff3bf!important;font-weight:800}
     </div>
     <label class="lbl">Explicação (aparece após responder)</label>
     <textarea class="field" id="qf-exp" rows="2" placeholder="Explique a resolução…"></textarea>
-    <label class="lbl">Categoria</label>
+    <label class="lbl">Categoria (define em quais fases aparece)</label>
     <select class="field" id="qf-level">
-      <option value="1">1 • Quadrado & Retângulo</option>
-      <option value="2">2 • Triângulo & Paralelogramo</option>
-      <option value="3">3 • Trapézio & Losango</option>
-      <option value="4">4 • Círculo & Mistas</option>
+      <option value="1">1 • Quadrado & Retângulo (Fase 1)</option>
+      <option value="2">2 • Triângulo & Paralelogramo (Fase 2)</option>
+      <option value="3">3 • Trapézio & Losango (Fase 3)</option>
+      <option value="4">4 • Círculo (Fase 4)</option>
+      <option value="0">0 • Mista (Fase 5 ou qualquer)</option>
     </select>
     <p class="err-msg" id="qf-err">⚠️ Preencha todos os campos obrigatórios!</p>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
@@ -448,7 +482,7 @@ const DEFAULT_PASS='professor';
 const DEFAULT_SHEET_URL='https://script.google.com/macros/s/AKfycbxXDECLqK8vW15nvmwdYBkE-2nHdia8u-7tcErmvRUFJfj6yp1KlhTg1IbbLttta4bQDA/exec';
 const GAME_TAG='geometria';
 const K={rank:'geo_rank_v1',q:'geo_questions_v1',cfg:'geo_config_v1'};
-const DEFAULTS={count:12,sound:true,pass:DEFAULT_PASS,sheetUrl:DEFAULT_SHEET_URL};
+const DEFAULTS={count:5,sound:true,pass:DEFAULT_PASS,sheetUrl:DEFAULT_SHEET_URL,autoRank:false};
 const MAXLIVES=8;
 const el=id=>document.getElementById(id);
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
@@ -460,12 +494,55 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
+/* monitor de erros visível */
+window.addEventListener('error',function(ev){try{toast('⚠️ ERRO: '+ev.message,'err')}catch(e){}});
+
 /* ============================================================
-   BANCO DE QUESTÕES — GEOMETRIA PLANA
-   type:'mc' = objetiva | type:'disc' = discursiva (ans = número)
+   AS 5 FASES
+============================================================ */
+const PHASES=[
+ {name:'PLANÍCIE DOS QUADRADOS',topic:'Quadrado & Retângulo',cat:1,nEnemies:6,
+  segs:[[18,0],[12,2],[16,0],[10,2],[16,0],[9,2],[14,0],[10,2],[16,0],[9,2],[15,0],[10,2],[16,0],[10,3],[22,0]],
+  pipes:[[.20,2],[.45,2],[.70,3]],plats:[.28,.56,.84],
+  theme:{sky1:'#5c94fc',sky2:'#8fc3ff',hill:'#3aa03a',hill2:'#2f8c2f',bush:'#2f8c2f',shape:'rgba(255,255,255,.45)',
+   ground:'#2a4bd7',groundTop:'#5a7bff',groundLine:'rgba(10,20,80,.55)',
+   brick:'#0e8a7a',brickTop:'#2fbfa8',brickLine:'#063f38',
+   pipe:'#7a3cc9',pipeHi:'#b98ef0',pipeLine:'#3a1470'}},
+ {name:'DESERTO DOS TRIÂNGULOS',topic:'Triângulo & Paralelogramo',cat:2,nEnemies:8,
+  segs:[[14,0],[9,3],[14,0],[8,3],[13,0],[8,2],[13,0],[8,3],[12,0],[7,3],[13,0],[8,2],[13,0],[8,3],[18,0]],
+  pipes:[[.18,2],[.42,3],[.68,2],[.85,2]],plats:[.25,.5,.75],
+  theme:{sky1:'#f2a65a',sky2:'#ffe0b0',hill:'#c9803a',hill2:'#b06a2c',bush:'#4a8c3a',shape:'rgba(255,255,255,.5)',
+   ground:'#c98a3b',groundTop:'#eab063',groundLine:'rgba(90,50,10,.5)',
+   brick:'#a04b1e',brickTop:'#c96b34',brickLine:'#5a2408',
+   pipe:'#2a7a4a',pipeHi:'#5ac48a',pipeLine:'#0a3a20'}},
+ {name:'GELEIRA DOS TRAPÉZIOS',topic:'Trapézio & Losango',cat:3,nEnemies:9,
+  segs:[[12,0],[8,3],[12,0],[8,4],[12,0],[7,3],[12,0],[8,4],[12,0],[7,3],[12,0],[8,3],[18,0]],
+  pipes:[[.15,3],[.40,2],[.62,3],[.84,2]],plats:[.28,.55,.80],
+  theme:{sky1:'#6fb8e8',sky2:'#d6f0ff',hill:'#8fb8d8',hill2:'#7aa6c8',bush:'#b8e0f0',shape:'rgba(255,255,255,.6)',
+   ground:'#5a72b0',groundTop:'#8fa3dd',groundLine:'rgba(20,30,80,.5)',
+   brick:'#3a5f9e',brickTop:'#5f83c4',brickLine:'#1a2f60',
+   pipe:'#3a8ac4',pipeHi:'#7ac2ee',pipeLine:'#123a5f'}},
+ {name:'VULCÃO DOS CÍRCULOS',topic:'Círculo (π = 3,14)',cat:4,nEnemies:10,
+  segs:[[12,0],[7,3],[11,0],[7,4],[11,0],[6,4],[11,0],[7,3],[11,0],[6,4],[12,0],[7,3],[16,0]],
+  pipes:[[.15,3],[.35,2],[.55,3],[.78,3]],plats:[.25,.5,.75],
+  theme:{sky1:'#2a1a4a',sky2:'#8a4a6a',hill:'#5a2a3a',hill2:'#47202e',bush:'#a03a2a',shape:'rgba(255,200,120,.35)',
+   ground:'#6b3040',groundTop:'#9a5060',groundLine:'rgba(30,5,15,.6)',
+   brick:'#8a1e1e',brickTop:'#b54040',brickLine:'#4a0a0a',
+   pipe:'#c46a1a',pipeHi:'#f0a050',pipeLine:'#5f2a05'}},
+ {name:'CASTELO DA GEOMETRIA',topic:'Mista — todas as formas!',cat:0,nEnemies:12,
+  segs:[[14,0],[6,3],[10,0],[6,3],[10,0],[6,4],[10,0],[6,3],[10,0],[6,4],[10,0],[6,3],[14,0]],
+  pipes:[[.15,3],[.32,3],[.50,3],[.68,3],[.85,2]],plats:[.2,.45,.7],
+  theme:{sky1:'#141432',sky2:'#3a3a6a',hill:'#2a2a4a',hill2:'#222240',bush:'#32325a',shape:'rgba(255,255,255,.25)',
+   ground:'#4a4a6a',groundTop:'#6f6f95',groundLine:'rgba(10,10,25,.6)',
+   brick:'#3a3a5e',brickTop:'#5a5a85',brickLine:'#16162e',
+   pipe:'#5a2fa8',pipeHi:'#8f6ad0',pipeLine:'#2a1060'}}
+];
+const NP=PHASES.length;
+
+/* ============================================================
+   BANCO DE QUESTÕES (40)
 ============================================================ */
 const DEFAULT_QUESTIONS=[
-/* ---- NÍVEL 1: QUADRADO & RETÂNGULO ---- */
 {id:'g1',level:1,type:'mc',q:'Qual é a fórmula da ÁREA do QUADRADO?',a:['A = L × L (lado ao quadrado)','A = (b × h) ÷ 2','A = 2 × (L + L)','A = L + L'],ans:0,exp:'Área do quadrado: A = L², ou seja, lado vezes lado. Ex.: lado 4 → A = 4 × 4 = 16.'},
 {id:'g2',level:1,type:'mc',q:'Qual é o PERÍMETRO de um quadrado de lado 7 cm?',a:['14 cm','21 cm','28 cm','49 cm'],ans:2,exp:'Perímetro do quadrado = 4 × L = 4 × 7 = 28 cm.'},
 {id:'g3',level:1,type:'disc',q:'Calcule a ÁREA de um quadrado de lado 6 cm. (responda em cm²)',ans:'36',unit:'cm²',exp:'A = L² = 6 × 6 = 36 cm².'},
@@ -476,7 +553,6 @@ const DEFAULT_QUESTIONS=[
 {id:'g8',level:1,type:'disc',q:'Calcule o PERÍMETRO de um retângulo de 10 m por 4 m. (responda em metros)',ans:'28',unit:'m',exp:'P = 2 × (10 + 4) = 2 × 14 = 28 m.'},
 {id:'g9',level:1,type:'mc',q:'O QUADRADO é o quadrilátero que tem:',a:['Quatro lados iguais e quatro ângulos retos (90°)','Apenas dois lados iguais','Quatro lados de medidas diferentes','Somente dois ângulos retos'],ans:0,exp:'Quadrado: 4 lados iguais e 4 ângulos de 90°.'},
 {id:'g10',level:1,type:'mc',q:'Em todo RETÂNGULO é verdade que:',a:['Os 4 lados são iguais','Os lados opostos são iguais e os 4 ângulos são retos','Nenhum ângulo é reto','As diagonais são lados da figura'],ans:1,exp:'Retângulo: lados opostos iguais e 4 ângulos retos (90°).'},
-/* ---- NÍVEL 2: TRIÂNGULO & PARALELOGRAMO ---- */
 {id:'g11',level:2,type:'mc',q:'Qual é a fórmula da ÁREA do TRIÂNGULO?',a:['A = b × h','A = (b × h) ÷ 2','A = 2 × b × h','A = b + h'],ans:1,exp:'Área do triângulo = (base × altura) ÷ 2.'},
 {id:'g12',level:2,type:'disc',q:'Calcule a ÁREA do triângulo de base 8 cm e altura 5 cm. (responda em cm²)',ans:'20',unit:'cm²',exp:'A = (8 × 5) ÷ 2 = 40 ÷ 2 = 20 cm².'},
 {id:'g13',level:2,type:'mc',q:'Um triângulo tem base 10 m e altura 6 m. Sua área é:',a:['16 m²','30 m²','60 m²','32 m²'],ans:1,exp:'A = (10 × 6) ÷ 2 = 60 ÷ 2 = 30 m².'},
@@ -486,7 +562,6 @@ const DEFAULT_QUESTIONS=[
 {id:'g17',level:2,type:'disc',q:'Calcule a ÁREA do paralelogramo de base 14 cm e altura 6 cm. (responda em cm²)',ans:'84',unit:'cm²',exp:'A = b × h = 14 × 6 = 84 cm².'},
 {id:'g18',level:2,type:'mc',q:'Um terreno retangular mede 15 m por 8 m. Qual é a sua área?',a:['23 m²','46 m²','120 m²','110 m²'],ans:2,exp:'A = 15 × 8 = 120 m².'},
 {id:'g19',level:2,type:'disc',q:'Um paralelogramo tem lados de 7 cm e 5 cm. Calcule o PERÍMETRO. (responda em cm)',ans:'24',unit:'cm',exp:'P = 2 × (7 + 5) = 2 × 12 = 24 cm.'},
-/* ---- NÍVEL 3: TRAPÉZIO & LOSANGO ---- */
 {id:'g20',level:3,type:'mc',q:'Qual é a fórmula da ÁREA do TRAPÉZIO?',a:['A = b × h','A = (B + b) × h ÷ 2','A = (D × d) ÷ 2','A = L²'],ans:1,exp:'Área do trapézio = (base maior + base menor) × altura ÷ 2.'},
 {id:'g21',level:3,type:'disc',q:'Calcule a ÁREA do trapézio: base maior 12 cm, base menor 8 cm, altura 5 cm. (responda em cm²)',ans:'50',unit:'cm²',exp:'A = (12 + 8) × 5 ÷ 2 = 20 × 5 ÷ 2 = 100 ÷ 2 = 50 cm².'},
 {id:'g22',level:3,type:'mc',q:'Um trapézio tem B = 10 m, b = 6 m e h = 4 m. Sua área é:',a:['16 m²','20 m²','32 m²','40 m²'],ans:2,exp:'A = (10 + 6) × 4 ÷ 2 = 16 × 4 ÷ 2 = 64 ÷ 2 = 32 m².'},
@@ -497,7 +572,6 @@ const DEFAULT_QUESTIONS=[
 {id:'g27',level:3,type:'mc',q:'O LOSANGO é o quadrilátero que tem:',a:['Quatro lados iguais','Apenas três lados iguais','Lados opostos de medidas diferentes','Nenhum lado igual'],ans:0,exp:'Losango: 4 lados iguais (e diagonais perpendiculares).'},
 {id:'g28',level:3,type:'disc',q:'Calcule a ÁREA do trapézio: B = 20 m, b = 10 m, h = 12 m. (responda em m²)',ans:'180',unit:'m²',exp:'A = (20 + 10) × 12 ÷ 2 = 30 × 12 ÷ 2 = 360 ÷ 2 = 180 m².'},
 {id:'g29',level:3,type:'disc',q:'Um losango tem todos os lados medindo 5 cm. Calcule o PERÍMETRO. (responda em cm)',ans:'20',unit:'cm',exp:'P = 4 × L = 4 × 5 = 20 cm.'},
-/* ---- NÍVEL 4: CÍRCULO & MISTAS ---- */
 {id:'g30',level:4,type:'mc',q:'Para os cálculos com círculo, usamos π ≈',a:['2,14','3,14','3,41','0,14'],ans:1,exp:'π (pi) ≈ 3,14 — é a razão entre o comprimento da circunferência e o diâmetro.'},
 {id:'g31',level:4,type:'mc',q:'Qual é a ÁREA de um círculo de raio 5 m? (use π = 3,14)',a:['15,7 m²','31,4 m²','78,5 m²','157 m²'],ans:2,exp:'A = π × r² = 3,14 × 5² = 3,14 × 25 = 78,5 m².'},
 {id:'g32',level:4,type:'disc',q:'Calcule a ÁREA do círculo de raio 10 cm. Use π = 3,14. (responda em cm²)',ans:'314',unit:'cm²',exp:'A = π × r² = 3,14 × 10² = 3,14 × 100 = 314 cm².'},
@@ -510,29 +584,19 @@ const DEFAULT_QUESTIONS=[
 {id:'g39',level:4,type:'mc',q:'Um triângulo RETÂNGULO é aquele que tem:',a:['Um ângulo de 90°','Os três lados iguais','Todos os ângulos agudos','Dois ângulos de 90°'],ans:0,exp:'Triângulo retângulo: possui um ângulo reto (90°).'},
 {id:'g40',level:4,type:'disc',q:'Uma porta retangular tem 2 m de altura e 0,8 m de largura. Calcule a ÁREA da porta. (responda em m²)',ans:'1,6',unit:'m²',exp:'A = 2 × 0,8 = 1,6 m².'}
 ];
-const LEVELS={1:'Quadrado & Retângulo',2:'Triângulo & Paralelogramo',3:'Trapézio & Losango',4:'Círculo & Mistas'};
+const LEVELS={0:'Mista',1:'Quadrado & Retângulo',2:'Triângulo & Paralelogramo',3:'Trapézio & Losango',4:'Círculo'};
 const ALLQ=()=>customQ||DEFAULT_QUESTIONS;
 function ensureCustom(){if(!customQ){customQ=JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));save(K.q,customQ)}}
 
-/* ---------- correção de respostas discursivas ---------- */
-function parseNum(s){
- const m=String(s==null?'':s).replace(/\s/g,'').replace(/,/g,'.').match(/-?\d+(?:\.\d+)?/);
- return m?parseFloat(m[0]):NaN;
-}
-function checkDisc(q,input){
- const v=parseNum(input);
- if(isNaN(v))return false;
- const t=parseFloat(String(q.ans).replace(',','.'));
- const tol=Math.max(0.011,Math.abs(t)*0.005); // 0,5% de tolerância
- return Math.abs(v-t)<=tol;
-}
+function parseNum(s){const m=String(s==null?'':s).replace(/\s/g,'').replace(/,/g,'.').match(/-?\d+(?:\.\d+)?/);return m?parseFloat(m[0]):NaN}
+function checkDisc(q,input){const v=parseNum(input);if(isNaN(v))return false;const t=parseFloat(String(q.ans).replace(',','.'));const tol=Math.max(0.011,Math.abs(t)*0.005);return Math.abs(v-t)<=tol}
 function discAnsTxt(q){return String(q.ans)+(q.unit?' '+q.unit:'')}
 
 /* ============================================================
    NAVEGAÇÃO / TOAST / CONFIRM
 ============================================================ */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));el(id).classList.add('active');window.scrollTo(0,0)}
-function toast(m,t){const o=el('toast');o.textContent=m;o.className='show '+(t||'');clearTimeout(o._t);o._t=setTimeout(()=>o.className='',2800)}
+function toast(m,t){const o=el('toast');o.textContent=m;o.className='show '+(t||'');clearTimeout(o._t);o._t=setTimeout(()=>o.className='',3000)}
 function openModal(id){el(id).classList.add('open')}
 function closeModal(id){el(id).classList.remove('open')}
 let cfCb=null;
@@ -557,6 +621,8 @@ function sfx(n){if(!cfg.sound)return;switch(n){
  case 'hurt':tone(400,80,0,.3,'sawtooth',.12);break;
  case 'win':[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,f,i*.13,.14));break;
  case 'lose':[392,330,262,196,131].forEach((f,i)=>tone(f,f,i*.2,.24));break;
+ case 'phase':[392,392,523,523,659,784].forEach((f,i)=>tone(f,f,i*.11,.12));break;
+ case 'tick':tone(880,880,0,.05,'square',.07);break;
 }}
 
 /* ============================================================
@@ -570,7 +636,7 @@ el('form-login').addEventListener('submit',e=>{
  el('login-err').classList.remove('show');
  player={name:name,serie:serie,turma:turma};
  el('brief-player').textContent='👤 '+name+' • '+serie+' • TURMA '+turma;
- el('brief-count').textContent='📦 Fase com '+cfg.count+' blocos "?" — banco com '+ALLQ().length+' questões (objetivas e discursivas). Boa sorte!';
+ el('brief-count').textContent='🏫 5 fases temáticas • '+cfg.count+' questões por fase • banco com '+ALLQ().length+' questões. Boa sorte!';
  show('scr-brief');
 });
 el('btn-brief-back').onclick=()=>show('scr-login');
@@ -581,110 +647,183 @@ el('btn-brief-back').onclick=()=>show('scr-login');
 const cv=el('cv'),ctx=cv.getContext('2d');
 const VW=960,VH=528,T=44,R=12,GY=10;
 const GRAV=.55,JUMP=-15,MAXV=4.2,ACC=.5,FRIC=.82;
+let levels=[],phaseIdx=0;
 let level=null,p=null,cam=0,state='idle',running=false,rafId=0,lastT=0,acc=0,frames=0;
 let quiz=[],qi=0,score=0,coinsGot=0,lives=MAXLIVES,streak=0,streakBest=0,correctCount=0,startTs=0;
-let particles=[],floats=[],bumps=[],jumpQueued=false;
+let particles=[],floats=[],bumps=[],jumpQueued=false,introTm=0;
+let lastRecId=null;
 
-/* ---------- geração determinística do nível ---------- */
 let seed=42;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
-function generateLevel(nQ){
- seed=42;
- const segs=[[18,0],[10,2],[16,0],[10,3],[16,0],[9,2],[14,0],[10,3],[16,0],[9,2],[15,0],[10,2],[16,0],[10,3],[22,0]];
+function buildLevel(pi,nQ){
+ seed=77+pi*13;
+ const D=PHASES[pi],th=D.theme;
+ const segs=D.segs;
  let W=0;const holes=[];
  segs.forEach(s=>{if(s[1])holes.push([W+s[0],s[1]]);W+=s[0]+s[1]});
  const Wt=W;
  const grid=Array.from({length:R},()=>Array(Wt).fill('.'));
  const isHole=c=>holes.some(h=>c>=h[0]&&c<h[0]+h[1]);
  for(let c=0;c<Wt;c++)if(!isHole(c)){grid[GY][c]='X';grid[GY+1][c]='X'}
- const pipes=[[40,2],[96,3],[150,2]];
- const pipeCols=new Set();
- pipes.forEach(pc=>{
-   for(let d=1;d<=pc[1];d++){grid[GY-d][pc[0]]='P';grid[GY-d][pc[0]+1]='P';pipeCols.add(pc[0]+':'+(GY-d));pipeCols.add((pc[0]+1)+':'+(GY-d))}
- });
- const plats=[[60,4],[122,4],[182,4]];
- const platAt=c=>plats.some(pl=>c>=pl[0]&&c<pl[0]+pl[1]);
- plats.forEach(pl=>{for(let i=0;i<pl[1];i++)grid[GY-4][pl[0]+i]='S'});
+ const pipeCols=new Set(),used=new Set(),platSpots=[];
  const stairX=Wt-16;
+ for(let c=stairX-2;c<Wt;c++)used.add(c);
  for(let i=0;i<5;i++)for(let j=0;j<=i;j++)grid[GY-1-j][stairX+i]='S';
- const highSpots=[[62,GY-7],[124,GY-7],[184,GY-7]];
+ function freeSpan(c,len){if(c<3)return false;for(let i=0;i<len;i++){if(isHole(c+i)||used.has(c+i))return false}return true}
+ function findSpot(t,len){let c=Math.max(3,Math.floor(t));for(let k=0;k<90;k++){if(c+len>stairX-5)return -1;if(freeSpan(c,len))return c;c++}return -1}
+ D.pipes.forEach(pf=>{
+   const c=findSpot(Wt*pf[0],2);if(c<0)return;
+   for(let d=1;d<=pf[1];d++){grid[GY-d][c]='P';grid[GY-d][c+1]='P';pipeCols.add(c+':'+(GY-d));pipeCols.add((c+1)+':'+(GY-d))}
+   used.add(c-1);used.add(c);used.add(c+1);used.add(c+2);
+ });
+ const highSpots=[];
+ D.plats.forEach(f=>{
+   const c=findSpot(Wt*f,4);if(c<0)return;
+   for(let i=0;i<4;i++){grid[GY-4][c+i]='S';used.add(c+i)}
+   highSpots.push({c:c+1,r:GY-7});
+   platSpots.push(c);
+ });
+ const coins=[];
+ holes.forEach(h=>{for(let i=0;i<h[1];i++)coins.push({c:h[0]+i,r:GY-4})});
+ platSpots.forEach(c=>{for(let i=0;i<4;i++)coins.push({c:c+i,r:GY-5})});
+ [0.08,0.34,0.60,0.90].forEach(f=>{
+   const c=Math.floor(Wt*f);
+   for(let k=0;k<2;k++){const cc=c+k;if(cc<Wt&&!isHole(cc)&&grid[GY-2][cc]==='.')coins.push({c:cc,r:GY-2})}
+ });
+ coins.forEach(cn=>{if(grid[cn.r]&&grid[cn.r][cn.c]==='.')cn.taken=false;else cn.skip=true});
  const qList=[];
- const nLow=nQ>=(highSpots.length+2)?nQ-highSpots.length:nQ;
- const cap=stairX-4;
- const step=Math.max(7,Math.floor((cap-16)/Math.max(1,nLow)));
- let cur=14;
+ const nHigh=Math.min(highSpots.length,Math.floor(nQ/2));
+ const nLow=Math.max(0,nQ-nHigh);
+ const cap=stairX-6;
+ const stepN=Math.max(6,Math.floor((cap-14)/Math.max(1,nLow)));
+ let cur=10;
  for(let i=0;i<nLow;i++){
    let c=cur,tries=0;
-   const bad=cc=>isHole(cc)||isHole(cc-1)||isHole(cc+1)||pipeCols.has(cc+':'+(GY-3))||pipeCols.has((cc-1)+':'+(GY-3))||pipeCols.has((cc+1)+':'+(GY-3))||platAt(cc)||qList.some(q=>Math.abs(q.c-cc)<3);
-   while(bad(c)&&tries++<40)c++;
-   if(c<cap){qList.push({c:c,r:GY-3});cur=c+step+Math.floor(rnd()*3)}
+   const bad=cc=>isHole(cc)||isHole(cc-1)||isHole(cc+1)||pipeCols.has(cc+':'+(GY-3))||used.has(cc)||grid[GY-3][cc]!=='.'||qList.some(q=>Math.abs(q.c-cc)<3);
+   while(bad(c)&&tries++<60)c++;
+   if(c<cap){qList.push({c:c,r:GY-3});cur=c+stepN+Math.floor(rnd()*3)}
  }
  const finalQ=[];
- let highIdx=0;
+ let hi=0;
  for(let i=0;i<nQ;i++){
-   if((i%2===1)&&highIdx<highSpots.length){finalQ.push({c:highSpots[highIdx][0],r:highSpots[highIdx][1]});highIdx++}
+   if(i%2===1&&hi<highSpots.length){finalQ.push({c:highSpots[hi].c,r:highSpots[hi].r});hi++}
    else if(qList.length)finalQ.push(qList.shift());
  }
  finalQ.forEach(q=>{grid[q.r][q.c]='?'});
  finalQ.forEach(q=>{
    if(q.r===GY-3){
-     if(rnd()<.55&&!isHole(q.c-1)&&grid[q.r][q.c-1]==='.')grid[q.r][q.c-1]='B';
-     if(rnd()<.45&&!isHole(q.c+1)&&grid[q.r][q.c+1]==='.')grid[q.r][q.c+1]='B';
+     if(rnd()<.5&&!isHole(q.c-1)&&grid[q.r][q.c-1]==='.'&&!used.has(q.c-1))grid[q.r][q.c-1]='B';
+     if(rnd()<.4&&!isHole(q.c+1)&&grid[q.r][q.c+1]==='.'&&!used.has(q.c+1))grid[q.r][q.c+1]='B';
    }
  });
- const coins=[];
- holes.forEach(h=>{for(let i=0;i<h[1];i++)coins.push({c:h[0]+i,r:GY-4})});
- plats.forEach(pl=>{for(let i=0;i<pl[1];i++)coins.push({c:pl[0]+i,r:GY-5})});
- [[6,GY-2],[7,GY-2],[33,GY-2],[34,GY-2],[35,GY-2],[66,GY-2],[67,GY-2],[108,GY-2],[109,GY-2],[157,GY-2],[158,GY-2],[196,GY-2],[197,GY-2]].forEach(pt=>coins.push({c:pt[0],r:pt[1]}));
- coins.forEach(cn=>{if(grid[cn.r]&&grid[cn.r][cn.c]==='.')cn.taken=false;else cn.skip=true});
  const enemies=[];
- for(let i=2;i<segs.length-2;i++){
-   const s=segs[i];let sx=0;for(let j=0;j<i;j++)sx+=segs[j][0]+segs[j][1];
-   if(s[0]>=9&&rnd()<.85){
-     const n=rnd()<.4?2:1;
-     for(let k=0;k<n;k++)enemies.push({x:(sx+2+k*(s[0]-4))*T+6,y:GY*T-26,w:30,h:26,vx:(k%2?-.7:.7)*(0.85+rnd()*.3),dead:false,squash:0,frame:0});
+ const spd=(0.8+pi*0.12);
+ function spawn(x,y,vxm){
+   const row=Math.min(R-1,Math.max(0,Math.floor((y+26)/T)));
+   let xx=x,tries=0;
+   while(tries<6){
+     const col=Math.min(Wt-1,Math.max(0,Math.floor((xx+15)/T)));
+     if(grid[row][col]==='.')break;
+     xx+=T;tries++;
    }
+   xx=Math.min(xx,(Wt-3)*T);
+   enemies.push({x:xx,y:y,w:30,h:26,vx:vxm*(0.85+rnd()*.3),dead:false,squash:0,frame:0});
  }
- enemies.push({x:124*T,y:(GY-4)*T-26,w:30,h:26,vx:-.6,dead:false,squash:0,frame:0});
+ let placed=0,sx=0;
+ for(let i=0;i<segs.length-1&&placed<D.nEnemies;i++){
+   const s=segs[i];
+   if(i>0&&s[0]>=9){
+     const n=(s[0]>=14&&placed+1<D.nEnemies&&rnd()<.5)?2:1;
+     for(let k=0;k<n&&placed<D.nEnemies;k++){
+       const ex=(sx+3+k*(s[0]-6))*T;
+       spawn(ex,GY*T-26,(k%2?-1:1)*spd);
+       placed++;
+     }
+   }
+   sx+=s[0]+s[1];
+ }
+ platSpots.forEach(c=>spawn((c+1)*T,(GY-4)*T-26,-spd*.8));
  const flagX=Wt-8;
- return {grid:grid,Wt:Wt,holes:holes,coins:coins,enemies:enemies,flagX:flagX,qTotal:finalQ.length,worldW:Wt*T};
+ return {grid:grid,Wt:Wt,holes:holes,coins:coins,enemies:enemies,flagX:flagX,qTotal:finalQ.length,worldW:Wt*T,theme:th,name:D.name,topic:D.topic};
 }
 
-/* ---------- partida ---------- */
+function buildAllLevels(){return PHASES.map((d,i)=>buildLevel(i,cfg.count))}
+function buildQuizAll(lvls){
+ const bank=ALLQ();const used=new Set();const out=[];
+ PHASES.forEach((d,i)=>{
+   const n=lvls[i].qTotal;if(n<=0)return;
+   let pool=shuffle(bank.filter(q=>!used.has(q.id)&&((d.cat===0)||(q.level===d.cat))));
+   if(pool.length<n)pool=pool.concat(shuffle(bank.filter(q=>!used.has(q.id)&&pool.indexOf(q)<0)));
+   pool.slice(0,n).forEach(q=>{used.add(q.id);out.push(q)});
+ });
+ return out.map(shuffleOptions);
+}
 function startGame(){
  if(!player){show('scr-login');return}
- const bank=ALLQ();
- if(!bank.length){toast('Cadastre questões na área do professor!','err');show('scr-login');return}
- const nQ=Math.min(cfg.count,bank.length);
- quiz=shuffle([...bank]).slice(0,nQ).map(shuffleOptions);
- level=generateLevel(nQ);
- if(level.qTotal>0&&level.qTotal<quiz.length)quiz=quiz.slice(0,level.qTotal);
- p={x:2*T,y:GY*T-34,w:26,h:34,vx:0,vy:0,onGround:false,dir:1,frame:0,inv:0,coyote:0,jbuf:0,win:false,safeC:2};
- cam=0;qi=0;score=0;coinsGot=0;lives=MAXLIVES;streak=0;streakBest=0;correctCount=0;
- particles=[];floats=[];bumps=[];frames=0;acc=0;jumpQueued=false;
- startTs=Date.now();state='play';lastT=performance.now();
- el('h-name').textContent=player.name.split(' ')[0].toUpperCase();
- el('pauseOverlay').classList.remove('show');
- renderLives();updateHUD();
- show('scr-game');
- if(!running){running=true;rafId=requestAnimationFrame(frame)}
- sfx('coin');
+ try{
+  const bank=ALLQ();
+  if(!bank.length){toast('Cadastre questões na área do professor!','err');show('scr-login');return}
+  levels=buildAllLevels();
+  quiz=buildQuizAll(levels);
+  if(!quiz.length){toast('Sem questões disponíveis!','err');return}
+  phaseIdx=0;qi=0;score=0;coinsGot=0;lives=MAXLIVES;streak=0;streakBest=0;correctCount=0;
+  startTs=Date.now();
+  level=levels[0];
+  p={x:2*T,y:GY*T-34,w:26,h:34,vx:0,vy:0,onGround:false,dir:1,frame:0,inv:0,coyote:0,jbuf:0,win:false,safeC:2};
+  cam=0;particles=[];floats=[];bumps=[];frames=0;acc=0;jumpQueued=false;
+  el('h-name').textContent=player.name.split(' ')[0].toUpperCase();
+  el('pauseOverlay').classList.remove('show');
+  el('clearOverlay').classList.remove('show');
+  renderLives();updateHUD();
+  show('scr-game');
+  if(!running){running=true;rafId=requestAnimationFrame(frame)}
+  setupPhase();
+ }catch(err){
+  toast('⚠️ Erro ao iniciar: '+err.message,'err');
+  console.error(err);
+ }
+}
+function setupPhase(){
+ try{
+  level=levels[phaseIdx];
+  p.x=2*T;p.y=GY*T-34;p.vx=0;p.vy=0;p.dir=1;p.frame=0;p.inv=0;p.onGround=false;p.win=false;p.safeC=2;
+  cam=0;particles=[];floats=[];bumps=[];jumpQueued=false;
+  el('pauseOverlay').classList.remove('show');
+  el('clearOverlay').classList.remove('show');
+  renderLives();updateHUD();
+  el('pi-title').textContent='FASE '+(phaseIdx+1);
+  el('pi-sub').innerHTML=level.name+'<br>'+level.topic;
+  el('pintro').classList.add('show');
+  state='intro';lastT=performance.now();
+  clearTimeout(introTm);
+  introTm=setTimeout(()=>{
+   el('pintro').classList.remove('show');
+   if(state==='intro'){state='play';lastT=performance.now();sfx('phase')}
+  },1800);
+ }catch(err){
+  toast('⚠️ Erro na fase: '+err.message,'err');
+  console.error(err);
+ }
 }
 function shuffleOptions(q){
- if(q.type==='disc')return Object.assign({},q); // discursiva não tem alternativas
+ if(q.type==='disc')return Object.assign({},q);
  const idx=shuffle([0,1,2,3]);
  return Object.assign({},q,{opts:idx.map(i=>q.a[i]),ans:idx.indexOf(q.ans)});
 }
 function renderLives(){el('h-lives').innerHTML=Array.from({length:MAXLIVES},(_,i)=>'<span class="'+(i<lives?'':'off')+'">'+(i<lives?'❤️':'🖤')+'</span>').join('')}
 function updateHUD(){
- el('h-score').textContent=score;
- el('h-coins').textContent=coinsGot;
- el('h-q').textContent=qi+'/'+quiz.length;
+ const set=(id,v)=>{const e=el(id);if(e)e.textContent=v};
+ set('h-phase',(phaseIdx+1)+'/'+NP);
+ set('h-score',score);
+ set('h-coins',coinsGot);
+ set('h-q',qi+'/'+quiz.length);
  const s=Math.floor((Date.now()-startTs)/1000);
- el('h-time').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
- if(level&&p)el('h-prog').style.width=Math.min(100,p.x/(level.flagX*T)*100)+'%';
+ set('h-time',String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'));
+ if(level&&p){
+   const prog=el('h-prog');
+   if(prog){const frac=Math.min(1,p.x/(level.flagX*T));prog.style.width=Math.min(100,((phaseIdx+frac)/NP)*100)+'%'}
+ }
 }
 
-/* ---------- colisão ---------- */
 const solidCh=ch=>'XB?UPS'.includes(ch);
 function tileAt(c,r){if(r<0||r>=R)return '.';if(c<0)return 'X';if(c>=level.Wt)return '.';return level.grid[r][c]}
 function solidAt(px,py){return solidCh(tileAt(Math.floor(px/T),Math.floor(py/T)))}
@@ -788,13 +927,23 @@ function damage(fell){
  if(lives<=0){state='dying';setTimeout(()=>endGame(false),700)}
 }
 function winLevel(){
- state='win';score+=300;sfx('win');
- addFloat(level.flagX*T+20,(GY-6)*T,'BANDEIRA! +300','#7ce838');
- updateHUD();
- setTimeout(()=>endGame(true),1400);
+ state='clear';
+ const last=(phaseIdx>=NP-1);
+ const bonus=last?350:150;
+ score+=bonus;sfx('win');updateHUD();
+ el('cl-title').textContent=last?'🏰 CASTELO CONQUISTADO!':'🚩 FASE '+(phaseIdx+1)+' COMPLETA!';
+ el('cl-lines').innerHTML='BÔNUS: +'+bonus+'<br>PONTOS: '+score+' • VIDAS: '+'❤️'.repeat(Math.max(0,lives))+'<br>'+(last?'VOCÊ VENCEU AS 5 FASES!':'PRÓXIMA: '+PHASES[phaseIdx+1].name);
+ el('btn-clear-next').textContent=last?'🏁 FINALIZAR E VER RANKING':'PRÓXIMA FASE ▶';
+ el('clearOverlay').classList.add('show');
 }
+el('btn-clear-next').onclick=()=>{
+ el('clearOverlay').classList.remove('show');
+ if(phaseIdx>=NP-1){endGame(true);return}
+ phaseIdx++;
+ setupPhase();
+};
 function addFloat(x,y,txt,color){floats.push({x:x,y:y,txt:txt,color:color,life:55})}
-function debris(c,r){const cx=c*T+T/2,cy=r*T+T/2;for(let i=0;i<6;i++)particles.push({x:cx,y:cy,vx:(Math.random()-.5)*6,vy:-Math.random()*7-2,life:45,color:'#0e8a7a',s:8})}
+function debris(c,r){const cx=c*T+T/2,cy=r*T+T/2;const lt=level.theme;for(let i=0;i<6;i++)particles.push({x:cx,y:cy,vx:(Math.random()-.5)*6,vy:-Math.random()*7-2,life:45,color:lt.brick,s:8})}
 function sparkle(x,y){for(let i=0;i<5;i++)particles.push({x:x,y:y,vx:(Math.random()-.5)*4,vy:-Math.random()*4,life:30,color:'#ffd800',s:5})}
 
 /* ============================================================
@@ -805,7 +954,7 @@ function openQuestion(){
  if(qi>=quiz.length){state='play';return}
  state='question';currentQ=quiz[qi];answered=false;
  const isDisc=currentQ.type==='disc';
- el('qz-cat').textContent='CAT '+LEVELS[currentQ.level]+' • '+(qi+1)+' DE '+quiz.length+' • '+(isDisc?'DISCURSIVA ✏️':'OBJETIVA 🔵');
+ el('qz-cat').textContent='FASE '+(phaseIdx+1)+' • '+LEVELS[currentQ.level]+' • '+(qi+1)+' DE '+quiz.length+' • '+(isDisc?'DISCURSIVA ✏️':'OBJETIVA 🔵');
  el('qz-text').textContent=currentQ.q;
  el('qz-fb').className='fbq';
  el('btn-qz-next').style.display='none';
@@ -814,7 +963,7 @@ function openQuestion(){
   el('qz-opts').style.display='none';
   el('qz-opts').innerHTML='';
   el('qz-disc').style.display='block';
-  el('qz-input').value='';
+  el('qz-input').value='';el('qz-input').disabled=false;
   el('btn-qz-confirm').style.display='inline-flex';
   setTimeout(()=>{try{el('qz-input').focus()}catch(e){}},150);
  }else{
@@ -884,18 +1033,12 @@ async function cloudClear(){
  const url=cloudURL();if(!url)return false;
  try{const r=await fetch(url+'?action=clear');const j=await r.json();return !!j.ok}catch(e){return false}
 }
-function filterForGame(list){
- if(!list)return list;
- const tagged=list.some(r=>r.game&&String(r.game)!=='');
- if(!tagged)return list; // backend antigo: mantém tudo
- return list.filter(r=>String(r.game)==='geometria');
-}
 function normRec(r){
  return {id:String(r.id||uid()),name:String(r.name||'—'),serie:String(r.serie||''),turma:String(r.turma||''),
   score:+r.score||0,correct:+r.correct||0,total:+r.total||0,coins:+r.coins||0,
   streakBest:+r.streakBest||0,duration:+r.duration||0,
   win:(r.win===true||String(r.win).toUpperCase()==='TRUE'),
-  dist:+r.dist||0,ts:+r.ts||Date.now(),date:String(r.date||'')};
+  dist:+r.dist||0,phase:+r.phase||0,ts:+r.ts||Date.now(),date:String(r.date||'')};
 }
 function mergeRank(list){
  if(!list)return;
@@ -914,45 +1057,93 @@ async function syncNow(){
   raw=(j&&j.ok&&j.list)?j.list:null;
  }catch(e){raw=null}
  if(raw===null)return false;
- mergeRank(filterForGame(raw));
+ const tagged=raw.some(r=>r.game&&String(r.game)!=='');
+ const mine=tagged?raw.filter(r=>String(r.game)==='geometria'):raw;
+ mergeRank(mine);
  const cloudIds=new Set(raw.map(r=>String(r.id)));
  const pending=(load(K.rank)||[]).filter(r=>!cloudIds.has(String(r.id)));
  for(const rec of pending){await cloudSend(rec)}
  return true;
 }
 
-/* ---------- fim de jogo ---------- */
+/* ============================================================
+   FIM DE JOGO + CONTAGEM REGRESSIVA DE REGISTRO
+============================================================ */
 function sortedRanking(){return [...(load(K.rank)||[])].sort((a,b)=>b.score-a.score||a.duration-b.duration||a.ts-b.ts)}
 function endGame(win){
  if(state==='over')return;
  state='over';running=false;cancelAnimationFrame(rafId);
+ clearTimeout(introTm);
  const duration=Math.max(1,Math.round((Date.now()-startTs)/1000));
- const dist=Math.min(100,Math.round(p.x/(level.flagX*T)*100));
- const rec={id:uid(),name:player.name,serie:player.serie,turma:player.turma,score:score,correct:correctCount,total:quiz.length,coins:coinsGot,streakBest:streakBest,duration:duration,win:win,dist:dist,ts:Date.now(),date:new Date().toLocaleString('pt-BR'),game:GAME_TAG};
+ const frac=level&&p?Math.min(1,p.x/(level.flagX*T)):0;
+ const dist=Math.min(100,Math.round(((phaseIdx+frac)/NP)*100));
+ const rec={id:uid(),name:player.name,serie:player.serie,turma:player.turma,score:score,correct:correctCount,total:quiz.length,coins:coinsGot,streakBest:streakBest,duration:duration,win:win,dist:dist,phase:phaseIdx+1,ts:Date.now(),date:new Date().toLocaleString('pt-BR'),game:GAME_TAG};
  const list=load(K.rank)||[];list.push(rec);save(K.rank,list);
- const pos=sortedRanking().findIndex(r=>r.id===rec.id)+1;
+ lastRecId=rec.id;
+ sfx(win?'win':'lose');
+ startSaveSequence(rec,win,duration);
+}
+/* contagem regressiva enquanto registra na nuvem e atualiza o ranking */
+function startSaveSequence(rec,win,duration){
+ const hasCloud=!!cloudURL();
+ const steps=hasCloud?5:2;
+ let n=steps,cloudOk=false,cloudDone=!hasCloud,finished=false;
+ openModal('modal-save');
+ const cnt=el('sv-count'),bar=el('sv-bar'),st=el('sv-status');
+ cnt.textContent=n;bar.style.width='0%';
+ st.textContent=hasCloud?'ENVIANDO PARA A NUVEM…':'REGISTRANDO…';
+ if(hasCloud){
+  cloudSend(rec).then(async ok=>{
+   if(finished)return;
+   cloudOk=ok;
+   if(ok){st.textContent='✅ REGISTRADO NA PLANILHA! ATUALIZANDO RANKING…';await syncNow();}
+   else st.textContent='⚠️ NUVEM INDISPONÍVEL… TENTANDO…';
+   cloudDone=true;
+  }).catch(()=>{cloudDone=true;});
+ }
+ const iv=setInterval(()=>{
+  n--;
+  if(n>0){
+   cnt.textContent=n;sfx('tick');
+   bar.style.width=((steps-n)/steps*100)+'%';
+  }else{
+   clearInterval(iv);
+   let w=0;
+   (function check(){
+    if(cloudDone||w>=40){finishSave();}else{w++;setTimeout(check,100);}
+   })();
+  }
+ },1000);
+ function finishSave(){
+  if(finished)return;finished=true;
+  bar.style.width='100%';
+  cnt.textContent='✔';
+  st.textContent=hasCloud
+    ?(cloudOk?'✅ PONTUAÇÃO REGISTRADA NA NUVEM! ☁️':'💾 SALVO NESTE PC — SINCRONIZA DEPOIS')
+    :'✅ PONTUAÇÃO REGISTRADA!';
+  setTimeout(()=>{closeModal('modal-save');showResult(win,duration);},1100);
+ }
+}
+function showResult(win,duration){
+ const pos=sortedRanking().findIndex(r=>r.id===lastRecId)+1;
  el('ov-emoji').textContent=win?'🏆':'💀';
- el('ov-title').textContent=win?'FASE COMPLETA!':'GAME OVER!';
+ el('ov-title').textContent=win?'AS 5 FASES FORAM CONQUISTADAS!':'GAME OVER!';
  el('ov-score').textContent=score;
- el('ov-pos').textContent=pos+'º';
+ el('ov-pos').textContent=(pos>0?pos+'º':'—');
+ el('ov-phase').textContent=(phaseIdx+1)+'/'+NP;
  el('ov-correct').textContent=correctCount+'/'+quiz.length;
  el('ov-coins').textContent=coinsGot;
  el('ov-streak').textContent=streakBest;
- sfx(win?'win':'lose');
+ el('ov-time').textContent=duration+'s';
  show('scr-over');
- if(cloudURL()){
-  cloudSend(rec).then(ok=>{
-   if(ok){toast('☁️ Resultado salvo na nuvem!','ok');syncNow();}
-   else{toast('⚠️ Sem conexão — salvo no PC, sincroniza depois.','err')}
-  });
- }
 }
 
-/* ---------- input (com guarda para o campo discursivo) ---------- */
+/* ---------- input ---------- */
 const input={left:false,right:false,jump:false};
 const GAMEKEYS=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','Spacebar'];
 addEventListener('keydown',e=>{
- if(el('modal-question').classList.contains('open'))return; // deixa digitar a resposta!
+ if(el('modal-question').classList.contains('open'))return;
+ if(el('modal-save').classList.contains('open'))return;
  if(!el('scr-game').classList.contains('active'))return;
  if(GAMEKEYS.includes(e.key))e.preventDefault();
  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')input.left=true;
@@ -981,12 +1172,11 @@ function togglePause(){
 }
 el('btn-pause').onclick=togglePause;
 el('btn-resume').onclick=togglePause;
-el('btn-restart').onclick=()=>{el('pauseOverlay').classList.remove('show');startGame()};
+el('btn-restart').onclick=()=>startGame();
 el('btn-quit2').onclick=()=>{el('pauseOverlay').classList.remove('show');showConfirm('SAIR DA PARTIDA?','Sua pontuação atual não será salva no ranking.',()=>{running=false;cancelAnimationFrame(rafId);state='idle';show('scr-login')},'SAIR')};
 el('btn-sound').onclick=()=>{cfg.sound=!cfg.sound;saveCfg();el('btn-sound').textContent=cfg.sound?'🔊':'🔇';toast(cfg.sound?'Som ligado 🔊':'Som desligado 🔇')};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')togglePause()});
 
-/* ---------- loop 60fps fixo ---------- */
 function frame(t){
  if(!running)return;
  rafId=requestAnimationFrame(frame);
@@ -998,29 +1188,25 @@ function frame(t){
 
 /* ---------- RENDER ---------- */
 function render(){
- const g=ctx.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#5c94fc');g.addColorStop(1,'#8fc3ff');
+ const th=level.theme;
+ const g=ctx.createLinearGradient(0,0,0,VH);g.addColorStop(0,th.sky1);g.addColorStop(1,th.sky2);
  ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH);
- // figuras geométricas gigantes de fundo
  for(let i=0;i<6;i++){
    const sx=((i*640-cam*.35)%(VW+900))-450;
-   if(sx>-340&&sx<VW+80)drawBgShape(sx,55+((i*90)%150),110+((i*47)%60),i%3);
+   if(sx>-340&&sx<VW+80)drawBgShape(sx,55+((i*90)%150),110+((i*47)%60),i%3,th);
  }
- // colinas
- ctx.fillStyle='#3aa03a';
+ ctx.fillStyle=th.hill;
  for(let i=0;i<8;i++){const hx=((i*520-cam*.3)%(VW+700))-350;if(hx>-350&&hx<VW+100)hill(hx+170,GY*T,90+((i*37)%50))}
- ctx.fillStyle='#2f8c2f';
+ ctx.fillStyle=th.hill2;
  for(let i=0;i<6;i++){const hx=((i*760+180-cam*.3)%(VW+900))-450;if(hx>-450&&hx<VW+150)hill(hx+220,GY*T,60+((i*53)%40))}
- // nuvens
  ctx.fillStyle='#ffffff';
  for(let i=0;i<7;i++){const cx=((i*430-cam*.5)%(VW+600))-300;if(cx>-300&&cx<VW+100)cloud(cx,50+((i*67)%110))}
- // arbustos
- ctx.fillStyle='#2f8c2f';
+ ctx.fillStyle=th.bush;
  for(let i=0;i<10;i++){const bx=((i*350+120-cam*.85)%(VW+800))-400;if(bx>-200&&bx<VW+100)bush(bx,GY*T)}
- // tiles
  const c0=Math.max(0,Math.floor(cam/T)-1),c1=Math.min(level.Wt-1,c0+24);
  for(let r=0;r<R;r++)for(let c=c0;c<=c1;c++){
    const ch=level.grid[r][c];if(ch==='.')continue;
-   drawTile(c,r,ch);
+   drawTile(c,r,ch,th);
  }
  level.coins.forEach(cn=>{
    if(cn.taken||cn.skip)return;
@@ -1046,9 +1232,9 @@ function render(){
  });
  ctx.textAlign='left';
 }
-function drawBgShape(x,y,s,kind){
+function drawBgShape(x,y,s,kind,th){
  ctx.save();
- ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=6;
+ ctx.strokeStyle=th.shape;ctx.lineWidth=6;
  if(kind===0){ctx.strokeRect(x,y,s,s)}
  else if(kind===1){ctx.beginPath();ctx.moveTo(x+s/2,y);ctx.lineTo(x+s,y+s);ctx.lineTo(x,y+s);ctx.closePath();ctx.stroke()}
  else{ctx.beginPath();ctx.arc(x+s/2,y+s/2,s/2,0,7);ctx.stroke()}
@@ -1061,22 +1247,22 @@ function cloud(x,y){
  ctx.beginPath();ctx.arc(x,y,20,0,7);ctx.arc(x+24,y-10,24,0,7);ctx.arc(x+52,y,18,0,7);ctx.fill();ctx.fillRect(x-8,y,72,18);
 }
 function bush(x,baseY){ctx.beginPath();ctx.arc(x,baseY-10,14,0,7);ctx.arc(x+20,baseY-16,18,0,7);ctx.arc(x+42,baseY-10,14,0,7);ctx.fill();ctx.fillRect(x-12,baseY-12,68,12)}
-function drawTile(c,r,ch){
+function drawTile(c,r,ch,th){
  const x=c*T-cam,y=r*T;
  if(x<-T||x>VW+T)return;
  let bump=0;
  for(let i=0;i<bumps.length;i++){if(bumps[i].c===c&&bumps[i].r===r){bump=Math.sin(bumps[i].t/10*Math.PI)*5;break}}
  const yy=y-bump;
  if(ch==='X'){
-   ctx.fillStyle='#2a4bd7';ctx.fillRect(x,yy,T,T);
-   ctx.fillStyle='#5a7bff';ctx.fillRect(x,yy,T,6);
-   ctx.strokeStyle='rgba(10,20,80,.55)';ctx.lineWidth=2;
+   ctx.fillStyle=th.ground;ctx.fillRect(x,yy,T,T);
+   ctx.fillStyle=th.groundTop;ctx.fillRect(x,yy,T,6);
+   ctx.strokeStyle=th.groundLine;ctx.lineWidth=2;
    ctx.strokeRect(x+1,yy+1,T-2,T-2);
    ctx.beginPath();ctx.moveTo(x,yy+22);ctx.lineTo(x+T,yy+22);ctx.moveTo(x+T/2,yy);ctx.lineTo(x+T/2,yy+T);ctx.stroke();
  }else if(ch==='B'){
-   ctx.fillStyle='#0e8a7a';ctx.fillRect(x,yy,T,T);
-   ctx.fillStyle='#2fbfa8';ctx.fillRect(x,yy,T,5);
-   ctx.strokeStyle='#063f38';ctx.lineWidth=2;ctx.strokeRect(x+1,yy+1,T-2,T-2);
+   ctx.fillStyle=th.brick;ctx.fillRect(x,yy,T,T);
+   ctx.fillStyle=th.brickTop;ctx.fillRect(x,yy,T,5);
+   ctx.strokeStyle=th.brickLine;ctx.lineWidth=2;ctx.strokeRect(x+1,yy+1,T-2,T-2);
    ctx.beginPath();ctx.moveTo(x,yy+15);ctx.lineTo(x+T,yy+15);ctx.moveTo(x,yy+30);ctx.lineTo(x+T,yy+30);ctx.moveTo(x+T/2,yy);ctx.lineTo(x+T/2,yy+15);ctx.moveTo(x+T*.25,yy+15);ctx.lineTo(x+T*.25,yy+30);ctx.moveTo(x+T*.75,yy+15);ctx.lineTo(x+T*.75,yy+30);ctx.stroke();
  }else if(ch==='?'){
    const glow=Math.sin(frames*.1+c)*.5+.5;
@@ -1099,9 +1285,9 @@ function drawTile(c,r,ch){
    ctx.strokeStyle='#4c4c4c';ctx.lineWidth=3;ctx.strokeRect(x+1.5,yy+1.5,T-3,T-3);
  }else if(ch==='P'){
    const top=tileAt(c,r-1)!=='P';
-   ctx.fillStyle='#7a3cc9';ctx.fillRect(x+(top?2:0),yy,T-(top?4:0),T);
-   ctx.fillStyle='#b98ef0';ctx.fillRect(x+(top?4:0)+4,yy+(top?4:0),8,T-(top?4:0));
-   ctx.strokeStyle='#3a1470';ctx.lineWidth=3;
+   ctx.fillStyle=th.pipe;ctx.fillRect(x+(top?2:0),yy,T-(top?4:0),T);
+   ctx.fillStyle=th.pipeHi;ctx.fillRect(x+(top?4:0)+4,yy+(top?4:0),8,T-(top?4:0));
+   ctx.strokeStyle=th.pipeLine;ctx.lineWidth=3;
    if(top){ctx.strokeRect(x-1,yy+1.5,T+2,T-3)}else{ctx.beginPath();ctx.moveTo(x+1,yy);ctx.lineTo(x+1,yy+T);ctx.moveTo(x+T-1,yy);ctx.lineTo(x+T-1,yy+T);ctx.stroke()}
  }
 }
@@ -1143,23 +1329,18 @@ function drawPlayer(x,y,dir,frameN,onGround,win){
  ctx.save();
  ctx.translate(x+13,0);ctx.scale(dir,1);ctx.translate(-13,0);
  const f=Math.floor(frameN)%4,walk=onGround&&(f===1||f===3);
- // boné + logo quadrado (geometria!)
  ctx.fillStyle='#00a8a8';ctx.fillRect(3,y,18,6);ctx.fillRect(16,y+5,12,4);
  ctx.fillStyle='#fff';ctx.fillRect(8,y+1,6,4);
- // rosto
  ctx.fillStyle='#ffd1a3';ctx.fillRect(6,y+6,13,9);
  ctx.fillStyle='#7a3b12';ctx.fillRect(3,y+7,4,8);
  ctx.fillStyle='#111';ctx.fillRect(14,y+8,3,4);
  ctx.fillStyle='#ffd1a3';ctx.fillRect(19,y+10,4,3);
  ctx.fillStyle='#5a2d0c';ctx.fillRect(14,y+13,8,2);
- // corpo
  ctx.fillStyle='#00a8a8';ctx.fillRect(4,y+15,17,6);
  ctx.fillStyle='#e52521';ctx.fillRect(6,y+19,13,9);
  ctx.fillStyle='#ffd800';ctx.fillRect(7,y+20,2,2);ctx.fillRect(16,y+20,2,2);
- // braços
  ctx.fillStyle='#00a8a8';ctx.fillRect(1,y+16,4,6);ctx.fillRect(20,y+16,4,6);
  ctx.fillStyle='#ffd1a3';ctx.fillRect(1,y+22,4,3);ctx.fillRect(20,y+22,4,3);
- // pernas e sapatos
  ctx.fillStyle='#e52521';
  if(!onGround){ctx.fillRect(7,y+28,5,4);ctx.fillRect(13,y+28,5,4);ctx.fillStyle='#7a3b12';ctx.fillRect(5,y+31,9,4);ctx.fillRect(13,y+31,9,4)}
  else if(walk){ctx.fillRect(6,y+28,5,4);ctx.fillRect(14,y+28,5,4);ctx.fillStyle='#7a3b12';ctx.fillRect(2,y+31,10,4);ctx.fillRect(15,y+31,10,4)}
@@ -1169,18 +1350,14 @@ function drawPlayer(x,y,dir,frameN,onGround,win){
 function drawMonster(x,y,frameN,sc){
  const f=Math.floor(frameN)%2;
  ctx.save();ctx.translate(x+15,y+26);ctx.scale(1,sc);ctx.translate(-15,-26);
- // corpo TRIÂNGULO (monstro geométrico)
  ctx.fillStyle='#8a3cc9';
  ctx.beginPath();ctx.moveTo(15,0);ctx.lineTo(29,19);ctx.lineTo(1,19);ctx.closePath();ctx.fill();
  ctx.strokeStyle='#3a1470';ctx.lineWidth=2;ctx.stroke();
- // olhos
  ctx.fillStyle='#fff';ctx.fillRect(8,10,6,6);ctx.fillRect(17,10,6,6);
  ctx.fillStyle='#111';ctx.fillRect(10,12,3,4);ctx.fillRect(19,12,3,4);
- // sobrancelhas bravas
  ctx.fillStyle='#3a1470';
  ctx.beginPath();ctx.moveTo(7,9);ctx.lineTo(14,11);ctx.lineTo(7,12);ctx.closePath();ctx.fill();
  ctx.beginPath();ctx.moveTo(24,9);ctx.lineTo(17,11);ctx.lineTo(24,12);ctx.closePath();ctx.fill();
- // pés
  ctx.fillStyle='#2a1450';
  if(f){ctx.fillRect(1,19,12,7);ctx.fillRect(18,19,11,7)}
  else{ctx.fillRect(4,19,11,7);ctx.fillRect(16,19,12,7)}
@@ -1188,23 +1365,52 @@ function drawMonster(x,y,frameN,sc){
 }
 
 /* ============================================================
-   RANKING PÚBLICO
+   RANKING PÚBLICO (com atualização manual e AUTO)
 ============================================================ */
-async function renderPublicRank(){
- if(cloudURL())el('rank-list').innerHTML='<p class="center sub pix" style="font-size:9px">🌐 BUSCANDO RANKING NA NUVEM…</p>';
- await syncNow();
+async function renderPublicRank(skipSync){
+ if(!skipSync&&cloudURL())el('rank-list').innerHTML='<p class="center sub pix" style="font-size:9px">🌐 BUSCANDO RANKING NA NUVEM…</p>';
+ if(!skipSync)await syncNow();
  const list=sortedRanking().slice(0,10);
  const medals=['🥇','🥈','🥉'];
  let html='';
  if(list.length>=3){
   html+='<div class="podium">'+list.slice(0,3).map((r,i)=>'<div class="pod '+(i===0?'p1':'')+'"><div class="m">'+medals[i]+'</div><b>'+esc(r.name)+'</b><small class="sub">'+esc(r.serie)+' • T'+esc(r.turma)+'</small><div class="pt">'+r.score+' PTS</div></div>').join('')+'</div>';
  }
- html+='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Nome</th><th>Série</th><th>Turma</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>';
- list.forEach((r,i)=>{html+='<tr><td>'+(medals[i]||(i+1)+'º')+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.serie)+'</td><td>'+esc(r.turma)+'</td><td><b>'+r.score+'</b></td><td>'+(r.win?'🏆':'💀')+'</td></tr>'});
- if(!list.length)html+='<tr><td colspan="6" class="center sub">Nenhuma partida ainda. Seja o primeiro! 🚀</td></tr>';
+ html+='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Nome</th><th>Série</th><th>Turma</th><th>Fase</th><th>Pontos</th><th>Resultado</th></tr></thead><tbody>';
+ list.forEach((r,i)=>{html+='<tr class="'+(r.id===lastRecId?'me':'')+'"><td>'+(medals[i]||(i+1)+'º')+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.serie)+'</td><td>'+esc(r.turma)+'</td><td>'+(r.phase?r.phase+'/'+NP:'—')+'</td><td><b>'+r.score+'</b></td><td>'+(r.win?'🏆':'💀')+'</td></tr>'});
+ if(!list.length)html+='<tr><td colspan="7" class="center sub">Nenhuma partida ainda. Seja o primeiro! 🚀</td></tr>';
  html+='</tbody></table></div>';
  el('rank-list').innerHTML=html;
+ const up=el('rank-updated');
+ if(up)up.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR')+(cloudURL()?' • ☁️ nuvem':' • 💾 local');
 }
+/* --- botão ATUALIZAR AGORA --- */
+el('btn-rank-refresh').onclick=async()=>{
+ const b=el('btn-rank-refresh');
+ b.disabled=true;const old=b.textContent;b.textContent='⏳ ATUALIZANDO…';
+ const ok=await syncNow();
+ await renderPublicRank(true);
+ b.textContent=old;b.disabled=false;
+ toast(ok?'✅ Ranking atualizado da nuvem!':'⚠️ Nuvem indisponível — mostrando dados locais.',ok?'ok':'err');
+};
+/* --- modo AUTO (tempo real, a cada 10s) --- */
+let autoTm=0;
+function setAuto(v){
+ cfg.autoRank=v;saveCfg();
+ const b=el('btn-rank-auto');
+ b.textContent='⏱ AUTO: '+(v?'ON 🟢':'OFF');
+ b.className='btn sm '+(v?'green':'teal');
+ if(v&&!autoTm)autoTm=setInterval(autoTick,10000);
+ if(!v&&autoTm){clearInterval(autoTm);autoTm=0;}
+}
+function autoTick(){
+ if(!el('scr-rank').classList.contains('active'))return;
+ syncNow().then(ok=>{if(ok)renderPublicRank(true);});
+}
+el('btn-rank-auto').onclick=()=>{
+ setAuto(!cfg.autoRank);
+ toast(cfg.autoRank?'⏱ Modo AUTO ligado — atualiza a cada 10s!':'⏱ Modo AUTO desligado.',cfg.autoRank?'ok':'');
+};
 el('btn-ov-rank').onclick=()=>{renderPublicRank();show('scr-rank')};
 el('btn-rank-home').onclick=()=>show('scr-login');
 el('btn-rank-play').onclick=()=>{if(player)startGame();else show('scr-login')};
@@ -1258,29 +1464,38 @@ async function renderPanel(){
 }
 function renderRankTable(){
  const rows=filteredRanked();
- el('rank-body').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+(i+1)+'º</td><td>'+esc(r.name)+'</td><td>'+esc(r.serie)+'</td><td>'+esc(r.turma)+'</td><td><b>'+r.score+'</b></td><td>'+r.correct+'/'+r.total+'</td><td>'+(r.coins||0)+'</td><td>'+(r.streakBest||0)+'</td><td>'+r.duration+'s</td><td>'+(r.win?'🏆 Vitória':'💀 Game Over')+'</td><td>'+esc(r.date)+'</td></tr>').join(''):'<tr><td colspan="11" class="center sub">Nenhum registro.</td></tr>';
+ el('rank-body').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+(i+1)+'º</td><td>'+esc(r.name)+'</td><td>'+esc(r.serie)+'</td><td>'+esc(r.turma)+'</td><td>'+(r.phase?r.phase+'/'+NP:'—')+'</td><td><b>'+r.score+'</b></td><td>'+r.correct+'/'+r.total+'</td><td>'+(r.coins||0)+'</td><td>'+(r.streakBest||0)+'</td><td>'+r.duration+'s</td><td>'+(r.win?'🏆 Vitória':'💀 Game Over')+'</td><td>'+esc(r.date)+'</td></tr>').join(''):'<tr><td colspan="12" class="center sub">Nenhum registro.</td></tr>';
 }
 el('f-turma').onchange=renderRankTable;
 el('f-busca').oninput=renderRankTable;
+/* --- botão atualizar do painel --- */
+el('btn-panel-refresh').onclick=async()=>{
+ const b=el('btn-panel-refresh');
+ b.disabled=true;const old=b.textContent;b.textContent='⏳ …';
+ const ok=await syncNow();
+ drawPanel();
+ b.textContent=old;b.disabled=false;
+ toast(ok?'✅ Dados atualizados da nuvem!':'⚠️ Nuvem indisponível.',ok?'ok':'err');
+};
 function downloadBlob(content,filename,mime){
  const a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
  a.download=filename;document.body.appendChild(a);a.click();
  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},400);
 }
-const HEAD=['Posição','Nome','Série','Turma','Pontos','Acertos','Total questões','Moedas','Melhor sequência','Tempo (s)','Resultado','Distância %','Data'];
+const HEAD=['Posição','Nome','Série','Turma','Fase','Pontos','Acertos','Total questões','Moedas','Melhor sequência','Tempo (s)','Resultado','Progresso %','Data'];
 el('btn-csv').onclick=()=>{
  const rows=filteredRanked();
  let csv='\uFEFF'+HEAD.join(';')+'\n';
- rows.forEach((r,i)=>{csv+=[i+1,r.name,r.serie,r.turma,r.score,r.correct,r.total,r.coins||0,r.streakBest||0,r.duration,r.win?'Vitoria':'Game Over',r.dist||0,r.date].map(v=>String(v).replace(/;/g,',')).join(';')+'\n'});
+ rows.forEach((r,i)=>{csv+=[i+1,r.name,r.serie,r.turma,r.phase||'',r.score,r.correct,r.total,r.coins||0,r.streakBest||0,r.duration,r.win?'Vitoria':'Game Over',r.dist||0,r.date].map(v=>String(v).replace(/;/g,',')).join(';')+'\n'});
  downloadBlob(csv,'ranking-super-geo.csv','text/csv;charset=utf-8;');
  toast('CSV exportado!','ok');
 };
 el('btn-xls').onclick=()=>{
  const rows=filteredRanked();
  let html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body>';
- html+='<h2>📐 Super Desafio da Geometria — Ranking</h2><table border="1"><tr style="background:#ffd800;font-weight:bold">'+HEAD.map(h=>'<th>'+h+'</th>').join('')+'</tr>';
- rows.forEach((r,i)=>{html+='<tr>'+[i+1,r.name,r.serie,r.turma,r.score,r.correct,r.total,r.coins||0,r.streakBest||0,r.duration,r.win?'Vitória':'Game Over',r.dist||0,r.date].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'});
+ html+='<h2>📐 Super Desafio da Geometria — Ranking (5 Fases)</h2><table border="1"><tr style="background:#ffd800;font-weight:bold">'+HEAD.map(h=>'<th>'+h+'</th>').join('')+'</tr>';
+ rows.forEach((r,i)=>{html+='<tr>'+[i+1,r.name,r.serie,r.turma,r.phase||'',r.score,r.correct,r.total,r.coins||0,r.streakBest||0,r.duration,r.win?'Vitória':'Game Over',r.dist||0,r.date].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>'});
  html+='</table></body></html>';
  downloadBlob('\uFEFF'+html,'ranking-super-geo.xls','application/vnd.ms-excel');
  toast('Excel exportado! 📊','ok');
@@ -1299,8 +1514,8 @@ function renderQsList(){
  const nDisc=qs.filter(q=>q.type==='disc').length;
  el('qs-count').textContent=qs.length+' questões ('+(qs.length-nDisc)+' objetivas + '+nDisc+' discursivas)';
  el('qs-list').innerHTML=qs.map(q=>{
-  const lvl=q.level||1,right=q.type==='disc'?discAnsTxt(q):q.a[q.ans];
-  return '<div class="qitem"><span class="badge b'+lvl+'">'+lvl+'</span><span class="badge '+(q.type==='disc'?'b6':'b5')+'">'+(q.type==='disc'?'DISC':'OBJ')+'</span><div class="qtx">'+esc(q.q)+'<br><small>✔ '+esc(right)+'</small></div><button class="btn blue sm" data-edit="'+q.id+'">✏️</button><button class="btn sm" style="background:var(--red);box-shadow:0 3px 0 var(--dred)" data-del="'+q.id+'">🗑️</button></div>';
+  const lvl=q.level||0,right=q.type==='disc'?discAnsTxt(q):q.a[q.ans];
+  return '<div class="qitem"><span class="badge b'+(lvl||5)+'">'+(lvl===0?'MIST':lvl)+'</span><span class="badge '+(q.type==='disc'?'b6':'b5')+'">'+(q.type==='disc'?'DISC':'OBJ')+'</span><div class="qtx">'+esc(q.q)+'<br><small>✔ '+esc(right)+'</small></div><button class="btn blue sm" data-edit="'+q.id+'">✏️</button><button class="btn sm" style="background:var(--red);box-shadow:0 3px 0 var(--dred)" data-del="'+q.id+'">🗑️</button></div>';
  }).join('')||'<p class="sub">Nenhuma questão. Clique em "Nova questão".</p>';
  el('qs-list').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openQForm(b.dataset.edit));
  el('qs-list').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>showConfirm('EXCLUIR QUESTÃO?','A questão será removida do banco.',()=>{ensureCustom();customQ=customQ.filter(q=>q.id!==b.dataset.del);save(K.q,customQ);renderQsList();toast('Excluída.','ok')},'EXCLUIR'));
@@ -1327,7 +1542,7 @@ function openQForm(id){
   ['a','b','c','d'].forEach((k,i)=>{el('qf-'+k).value=q?q.a[i]:'';el('qf-ans'+i).checked=q?(q.ans===i):(i===0)});
  }
  el('qf-exp').value=q?q.exp:'';
- el('qf-level').value=q?String(q.level||1):'1';
+ el('qf-level').value=q?String(q.level===0?0:(q.level||1)):'1';
  el('qf-err').classList.remove('show');openModal('modal-qform');
 }
 el('btn-qf-cancel').onclick=()=>closeModal('modal-qform');
@@ -1383,8 +1598,10 @@ el('btn-test-cloud').onclick=async()=>{
  }
 };
 el('btn-reset-qs').onclick=()=>showConfirm('RESTAURAR QUESTÕES?','O banco volta às 40 questões originais de Geometria.',()=>{customQ=null;localStorage.removeItem(K.q);renderQsList();toast('Restauradas!','ok')},'RESTAURAR');
-el('btn-wipe').onclick=()=>showConfirm('APAGAR TUDO?','Ranking local, questões e ajustes deste navegador serão apagados. A planilha da nuvem NÃO é apagada por aqui.',()=>{[K.rank,K.q,K.cfg].forEach(k=>localStorage.removeItem(k));cfg=Object.assign({},DEFAULTS);customQ=null;toast('Tudo apagado!','ok');setTimeout(()=>location.reload(),800)},'APAGAR TUDO');
+el('btn-wipe').onclick=()=>showConfirm('APAGAR TUDO?','Ranking local, questões e ajustes deste navegador serão apagados. A planilha da nuvem NÃO é apagada por aqui.',()=>{[K.rank,K.q,K.cfg].forEach(k=>localStorage.removeItem(k));cfg=Object.assign({},DEFAULTS);customQ=null;setAuto(false);toast('Tudo apagado!','ok');setTimeout(()=>location.reload(),800)},'APAGAR TUDO');
 el('btn-sound').textContent=cfg.sound?'🔊':'🔇';
+/* inicia o modo AUTO conforme salvo (persiste entre sessões) */
+setAuto(!!cfg.autoRank);
 </script>
 </body>
 </html>
