@@ -5,10 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <title>📐 Super Desafio da Geometria — 5 Fases</title>
 <!-- ============================================================
-  SUPER DESAFIO DA GEOMETRIA — v4.2
-  NOVO: botão de atualizar ranking + AUTO (tempo real, 10s)
-  NOVO: contagem regressiva ao registrar pontuação na nuvem
-  SENHA DO PROFESSOR: professor
+  SUPER DESAFIO DA GEOMETRIA — v4.4 (COMPLETA)
+  • 5 fases temáticas (mapas determinísticos = ranking justo)
+  • 8 chances • questões objetivas + discursivas (40 no banco)
+  • Ranking do aluno: AUTO-atualização a cada 10s (sem botões)
+  • Professor: botões Atualizar/Enviar pendentes + filtros
+    SÉRIE + TURMA em cascata (estatísticas e exportações filtradas)
+  • Fila offline: salva no dispositivo, 3 tentativas com progresso,
+    reenvio automático quando a internet volta
+  • SENHA DO PROFESSOR: professor  (constante DEFAULT_PASS)
 ============================================================ -->
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -69,7 +74,6 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .rule b{display:block;font-size:13.5px}.rule span{font-size:12px;color:var(--muted)}
 .keys{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;justify-content:center;align-items:center}
 .key{background:#111;color:#fff;border-radius:6px;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:9px;border:2px solid #000;box-shadow:0 3px 0 #000}
-.rank-tools{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 #scr-game{padding:12px 8px 20px;justify-content:flex-start}
 .game-shell{width:min(980px,100%)}
 .hud{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center;background:#000;border:4px solid #000;border-radius:10px 10px 0 0;padding:10px 14px;font-family:'Press Start 2P',monospace;color:#fff;font-size:10px}
@@ -100,7 +104,13 @@ select.field{appearance:none;background-image:linear-gradient(45deg,transparent 
 .mbox{width:min(600px,100%);max-height:94vh;overflow:auto;padding:22px;animation:pop .25s}
 .mbox h2{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--dred);display:flex;align-items:center;gap:10px}
 .savebar{height:16px;background:#0f1637;border:3px solid #000;border-radius:9px;overflow:hidden;margin-top:14px}
-.savebar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#7ce838,#43b047);transition:width .95s linear}
+.savebar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#7ce838,#43b047);transition:width .6s ease}
+.sv-steps{display:grid;gap:8px;margin-top:14px;text-align:left}
+.sv-step{display:flex;gap:10px;align-items:center;background:#fff;border:2px solid #000;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:700}
+.sv-ic{flex:0 0 28px;height:28px;border:3px solid #000;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#eee;font-size:15px}
+.sv-ic.done{background:#c8f7c5}
+.sv-ic.wait{background:#fff3bf;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.45}}
 .qbadge{background:var(--yellow);border:3px solid #000;border-radius:6px;padding:8px;font-size:16px;box-shadow:0 4px 0 #7a3c00;animation:bounce 1.6s infinite}
 .qtext{font-size:16.5px;font-weight:700;margin-top:14px;line-height:1.5}
 .opts{display:grid;gap:9px;margin-top:14px}
@@ -144,7 +154,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
 .pane.active{display:block;animation:pop .3s}
 .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .filters{display:flex;gap:10px;margin:16px 0;flex-wrap:wrap}
-.filters .field{flex:1;min-width:170px;width:auto}
+.filters .field{flex:1;min-width:150px;width:auto}
 .export-bar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
 .qlist{display:grid;gap:9px;margin-top:14px}
 .qitem{display:flex;gap:8px;align-items:center;background:#fff;border:2px solid #000;border-radius:8px;padding:10px 12px;flex-wrap:wrap}
@@ -200,7 +210,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
       <div class="rule"><span class="ic">🗺️</span><div><b>5 fases temáticas</b><span>Quadrado/Retângulo → Triângulo → Trapézio/Losango → Círculo → Castelo Mista!</span></div></div>
       <div class="rule"><span class="ic">❤️</span><div><b>8 chances</b><span>As chances valem para o jogo TODO — zerei = Game Over.</span></div></div>
       <div class="rule"><span class="ic">❓</span><div><b>Blocos "?"</b><span>Bata com a cabeça para abrir a questão da fase (objetiva ou discursiva).</span></div></div>
-      <div class="rule"><span class="ic">☁️</span><div><b>Ranking ao vivo</b><span>Ao terminar, sua pontuação é registrada na nuvem com contagem regressiva!</span></div></div>
+      <div class="rule"><span class="ic">📶</span><div><b>Ranking seguro</b><span>Sem internet? Sua pontuação fica salva e é enviada sozinha quando a conexão voltar!</span></div></div>
     </div>
     <p class="center sub mt" style="font-size:12.5px" id="brief-count"></p>
     <div class="keys">
@@ -273,14 +283,19 @@ tr.me{background:#fff3bf!important;font-weight:800}
   </div>
 </div>
 
-<!-- ===================== MODAL SALVANDO (contagem) ===================== -->
+<!-- ===================== MODAL SALVANDO (progresso do envio) ===================== -->
 <div class="modal" id="modal-save">
-  <div class="retro mbox" style="width:min(430px,100%);text-align:center">
+  <div class="retro mbox" style="width:min(470px,100%);text-align:center">
     <h2 style="justify-content:center">☁️ REGISTRANDO PONTUAÇÃO</h2>
-    <div id="sv-count" style="font-family:'Press Start 2P',monospace;font-size:clamp(44px,12vw,80px);color:var(--dred);text-shadow:4px 4px 0 #ffd800;margin-top:10px">5</div>
-    <p class="pix" id="sv-status" style="font-size:9px;line-height:1.9;margin-top:8px;color:#7a5b1e">ENVIANDO PARA A NUVEM…</p>
+    <div id="sv-count" style="font-family:'Press Start 2P',monospace;font-size:clamp(40px,11vw,72px);color:var(--dred);text-shadow:4px 4px 0 #ffd800;margin-top:10px">3</div>
+    <p class="pix" id="sv-status" style="font-size:9px;line-height:1.9;margin-top:8px;color:#7a5b1e">PREPARANDO ENVIO…</p>
     <div class="savebar"><i id="sv-bar"></i></div>
-    <p class="sub" style="font-size:11px;margin-top:10px">Aguarde: estamos gravando na planilha e atualizando o ranking 📊</p>
+    <div class="sv-steps">
+      <div class="sv-step"><span class="sv-ic" id="sv-ic1">•</span><span>Pontuação salva no dispositivo</span></div>
+      <div class="sv-step"><span class="sv-ic" id="sv-ic2">•</span><span>Envio para a nuvem (até 3 tentativas)</span></div>
+      <div class="sv-step"><span class="sv-ic" id="sv-ic3">•</span><span>Ranking atualizado</span></div>
+    </div>
+    <p class="sub" style="font-size:11px;margin-top:12px">📶 Sem internet? Fica pendente e o jogo envia sozinho quando a conexão voltar.</p>
   </div>
 </div>
 
@@ -291,6 +306,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
     <h1 class="title" id="ov-title" style="color:#fff;text-shadow:3px 3px 0 #000;font-size:14px">FASE COMPLETA!</h1>
     <div class="bigscore" id="ov-score">0</div>
     <p class="pix" style="font-size:8px;color:#7a5b1e;margin-top:4px">PONTOS</p>
+    <p class="pix center" id="ov-note" style="display:none;font-size:8px;line-height:1.9;margin-top:10px;padding:8px;border:3px solid #000;border-radius:8px"></p>
     <div class="stats">
       <div class="stat"><b id="ov-pos">—</b><span>Posição no ranking</span></div>
       <div class="stat"><b id="ov-phase">1/5</b><span>Fase alcançada</span></div>
@@ -307,16 +323,12 @@ tr.me{background:#fff3bf!important;font-weight:800}
   </div>
 </section>
 
-<!-- ===================== RANKING ===================== -->
+<!-- ===================== RANKING (ALUNO — auto) ===================== -->
 <section class="screen" id="scr-rank">
   <div class="retro" style="width:min(720px,100%);padding:24px">
     <h1 class="title" style="color:#fff;text-shadow:3px 3px 0 #000;font-size:15px">🏆 RANKING</h1>
     <p class="center sub" id="rank-updated" style="font-size:11px;margin-top:8px">—</p>
-    <div class="rank-tools">
-      <button class="btn blue sm" id="btn-rank-refresh">🔄 ATUALIZAR AGORA</button>
-      <button class="btn teal sm" id="btn-rank-auto">⏱ AUTO: OFF</button>
-    </div>
-    <p class="center sub" style="font-size:10.5px;margin-top:8px">💡 No modo AUTO o ranking se atualiza sozinho a cada 10s — ideal para projetar no telão!</p>
+    <p class="center sub" style="font-size:10.5px;margin-top:4px">🔄 Este ranking se atualiza automaticamente a cada 10 segundos</p>
     <div id="rank-list" class="mt"></div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
       <button class="btn gray" id="btn-rank-home">🏠 INÍCIO</button>
@@ -346,6 +358,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
         <div class="stat"><b id="st-best">0</b><span>Recorde 🥇</span></div>
       </div>
       <div class="filters">
+        <select class="field" id="f-serie"><option value="">Todas as séries</option></select>
         <select class="field" id="f-turma"><option value="">Todas as turmas</option></select>
         <input class="field" id="f-busca" placeholder="🔍 Buscar aluno…">
       </div>
@@ -357,8 +370,9 @@ tr.me{background:#fff3bf!important;font-weight:800}
       </div>
       <div class="export-bar">
         <button class="btn teal sm" id="btn-panel-refresh">🔄 ATUALIZAR DA NUVEM</button>
+        <button class="btn green sm" id="btn-panel-pending">📤 ENVIAR PENDENTES (0)</button>
         <button class="btn blue sm" id="btn-xls">📊 EXPORTAR EXCEL (.XLS)</button>
-        <button class="btn green sm" id="btn-csv">📄 EXPORTAR CSV</button>
+        <button class="btn sm" id="btn-csv" style="background:#0e8a7a;box-shadow:0 4px 0 #063f38">📄 EXPORTAR CSV</button>
         <button class="btn sm" style="background:#555;box-shadow:0 4px 0 #222;margin-left:auto" id="btn-clear-rank">🗑️ LIMPAR RANKING</button>
       </div>
     </div>
@@ -399,7 +413,7 @@ tr.me{background:#fff3bf!important;font-weight:800}
         <h3>⚠️ Zona de perigo (não pode ser desfeito)</h3>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
           <button class="btn gray sm" id="btn-reset-qs">♻️ RESTAURAR QUESTÕES ORIGINAIS</button>
-          <button class="btn sm" style="background:var(--red);box-shadow:0 3px 0 var(--dred)" id="btn-wipe">💥 APAGAR TODOS OS DADOS</button>
+          <button class="btn sm" style="background:var(--red);box-shadow:0 4px 0 var(--dred)" id="btn-wipe">💥 APAGAR TODOS OS DADOS</button>
         </div>
       </div>
     </div>
@@ -481,8 +495,8 @@ tr.me{background:#fff3bf!important;font-weight:800}
 const DEFAULT_PASS='professor';
 const DEFAULT_SHEET_URL='https://script.google.com/macros/s/AKfycbxXDECLqK8vW15nvmwdYBkE-2nHdia8u-7tcErmvRUFJfj6yp1KlhTg1IbbLttta4bQDA/exec';
 const GAME_TAG='geometria';
-const K={rank:'geo_rank_v1',q:'geo_questions_v1',cfg:'geo_config_v1'};
-const DEFAULTS={count:5,sound:true,pass:DEFAULT_PASS,sheetUrl:DEFAULT_SHEET_URL,autoRank:false};
+const K={rank:'geo_rank_v1',q:'geo_questions_v1',cfg:'geo_config_v1',pending:'geo_pending_v1'};
+const DEFAULTS={count:5,sound:true,pass:DEFAULT_PASS,sheetUrl:DEFAULT_SHEET_URL};
 const MAXLIVES=8;
 const el=id=>document.getElementById(id);
 const load=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
@@ -493,6 +507,7 @@ let customQ=load(K.q);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* monitor de erros visível */
 window.addEventListener('error',function(ev){try{toast('⚠️ ERRO: '+ev.message,'err')}catch(e){}});
@@ -1019,19 +1034,46 @@ el('btn-qz-next').onclick=()=>{
 };
 
 /* ============================================================
-   NUVEM — GOOGLE SHEETS
+   NUVEM + FILA DE ENVIO OFFLINE (resistente a queda de internet)
 ============================================================ */
 function cloudURL(){return (cfg.sheetUrl||'').trim()}
+function fetchTO(url,ms){
+ const c=new AbortController();
+ const t=setTimeout(()=>c.abort(),ms);
+ return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t));
+}
 async function cloudSend(rec){
  const url=cloudURL();if(!url)return false;
  try{
-  const r=await fetch(url+'?action=save&data='+encodeURIComponent(JSON.stringify(rec)));
+  const r=await fetchTO(url+'?action=save&data='+encodeURIComponent(JSON.stringify(rec)),7000);
   const j=await r.json();return !!j.ok;
  }catch(e){return false}
 }
 async function cloudClear(){
  const url=cloudURL();if(!url)return false;
- try{const r=await fetch(url+'?action=clear');const j=await r.json();return !!j.ok}catch(e){return false}
+ try{const r=await fetchTO(url+'?action=clear',7000);const j=await r.json();return !!j.ok}catch(e){return false}
+}
+/* ---- fila persistente ---- */
+function queueAll(){return load(K.pending)||[]}
+function queuePush(rec){const q=queueAll();if(!q.some(r=>r.id===rec.id))q.push(rec);save(K.pending,q)}
+function queueRemove(id){save(K.pending,queueAll().filter(r=>r.id!==id))}
+function pendingCount(){return queueAll().length}
+let flushing=false;
+async function flushQueue(silent){
+ if(flushing||!cloudURL())return 0;
+ flushing=true;
+ try{
+  const q=queueAll();let sent=0;
+  for(const rec of q){
+   if(navigator.onLine===false)break;
+   const ok=await cloudSend(rec);
+   if(ok){queueRemove(rec.id);sent++}
+  }
+  if(sent&&!silent){
+   toast('☁️ '+sent+' resultado(s) pendente(s) enviado(s) com sucesso!','ok');
+  }
+  return sent;
+ }finally{flushing=false}
 }
 function normRec(r){
  return {id:String(r.id||uid()),name:String(r.name||'—'),serie:String(r.serie||''),turma:String(r.turma||''),
@@ -1052,7 +1094,7 @@ async function syncNow(){
  const url=cloudURL();if(!url)return false;
  let raw=null;
  try{
-  const r=await fetch(url+'?action=load&game='+GAME_TAG);
+  const r=await fetchTO(url+'?action=load&game='+GAME_TAG,8000);
   const j=await r.json();
   raw=(j&&j.ok&&j.list)?j.list:null;
  }catch(e){raw=null}
@@ -1060,14 +1102,18 @@ async function syncNow(){
  const tagged=raw.some(r=>r.game&&String(r.game)!=='');
  const mine=tagged?raw.filter(r=>String(r.game)==='geometria'):raw;
  mergeRank(mine);
- const cloudIds=new Set(raw.map(r=>String(r.id)));
- const pending=(load(K.rank)||[]).filter(r=>!cloudIds.has(String(r.id)));
- for(const rec of pending){await cloudSend(rec)}
  return true;
 }
+/* reenvio automático: volta a internet / a cada 20s / ao abrir telas */
+window.addEventListener('online',()=>{flushQueue(false).then(n=>{if(n&&el('scr-rank').classList.contains('active'))renderPublicRank(false)})});
+setInterval(()=>{if(navigator.onLine!==false)flushQueue(true)},20000);
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden){flushQueue(true)}
+ if(document.hidden&&state==='play')togglePause();
+});
 
 /* ============================================================
-   FIM DE JOGO + CONTAGEM REGRESSIVA DE REGISTRO
+   FIM DE JOGO + SEQUÊNCIA DE REGISTRO COM PROGRESSO
 ============================================================ */
 function sortedRanking(){return [...(load(K.rank)||[])].sort((a,b)=>b.score-a.score||a.duration-b.duration||a.ts-b.ts)}
 function endGame(win){
@@ -1078,53 +1124,57 @@ function endGame(win){
  const frac=level&&p?Math.min(1,p.x/(level.flagX*T)):0;
  const dist=Math.min(100,Math.round(((phaseIdx+frac)/NP)*100));
  const rec={id:uid(),name:player.name,serie:player.serie,turma:player.turma,score:score,correct:correctCount,total:quiz.length,coins:coinsGot,streakBest:streakBest,duration:duration,win:win,dist:dist,phase:phaseIdx+1,ts:Date.now(),date:new Date().toLocaleString('pt-BR'),game:GAME_TAG};
+ /* 1) SEMPRE salva no dispositivo primeiro (nunca se perde) */
  const list=load(K.rank)||[];list.push(rec);save(K.rank,list);
+ queuePush(rec);
  lastRecId=rec.id;
  sfx(win?'win':'lose');
  startSaveSequence(rec,win,duration);
 }
-/* contagem regressiva enquanto registra na nuvem e atualiza o ranking */
 function startSaveSequence(rec,win,duration){
  const hasCloud=!!cloudURL();
- const steps=hasCloud?5:2;
- let n=steps,cloudOk=false,cloudDone=!hasCloud,finished=false;
  openModal('modal-save');
  const cnt=el('sv-count'),bar=el('sv-bar'),st=el('sv-status');
- cnt.textContent=n;bar.style.width='0%';
- st.textContent=hasCloud?'ENVIANDO PARA A NUVEM…':'REGISTRANDO…';
- if(hasCloud){
-  cloudSend(rec).then(async ok=>{
-   if(finished)return;
-   cloudOk=ok;
-   if(ok){st.textContent='✅ REGISTRADO NA PLANILHA! ATUALIZANDO RANKING…';await syncNow();}
-   else st.textContent='⚠️ NUVEM INDISPONÍVEL… TENTANDO…';
-   cloudDone=true;
-  }).catch(()=>{cloudDone=true;});
- }
- const iv=setInterval(()=>{
-  n--;
-  if(n>0){
-   cnt.textContent=n;sfx('tick');
-   bar.style.width=((steps-n)/steps*100)+'%';
-  }else{
-   clearInterval(iv);
-   let w=0;
-   (function check(){
-    if(cloudDone||w>=40){finishSave();}else{w++;setTimeout(check,100);}
-   })();
+ const ic1=el('sv-ic1'),ic2=el('sv-ic2'),ic3=el('sv-ic3');
+ ic1.className='sv-ic done';ic1.textContent='✔';
+ (async()=>{
+  let sentOk=false;
+  if(hasCloud){
+   const maxT=3;
+   for(let i=1;i<=maxT;i++){
+    if(navigator.onLine===false){st.textContent='📴 SEM INTERNET AGORA';break}
+    cnt.textContent=(maxT-i+1);
+    st.textContent='CLOUD ☁️ — TENTATIVA '+i+' DE '+maxT+'…';
+    ic2.className='sv-ic wait';ic2.textContent='…';
+    bar.style.width=Math.round(i/maxT*75)+'%';
+    sfx('tick');
+    const ok=await cloudSend(rec);
+    if(ok){sentOk=true;break}
+    if(i<maxT){st.textContent='⚠️ FALHOU — TENTANDO DE NOVO…';await sleep(1600*i)}
+   }
   }
- },1000);
- function finishSave(){
-  if(finished)return;finished=true;
-  bar.style.width='100%';
-  cnt.textContent='✔';
-  st.textContent=hasCloud
-    ?(cloudOk?'✅ PONTUAÇÃO REGISTRADA NA NUVEM! ☁️':'💾 SALVO NESTE PC — SINCRONIZA DEPOIS')
-    :'✅ PONTUAÇÃO REGISTRADA!';
-  setTimeout(()=>{closeModal('modal-save');showResult(win,duration);},1100);
- }
+  if(sentOk){
+   queueRemove(rec.id);
+   ic2.className='sv-ic done';ic2.textContent='✔';
+   st.textContent='✅ ENVIADO! ATUALIZANDO O RANKING…';
+   ic3.className='sv-ic wait';ic3.textContent='…';
+   bar.style.width='92%';
+   await syncNow();
+   ic3.className='sv-ic done';ic3.textContent='✔';
+   bar.style.width='100%';
+   cnt.textContent='✔';
+   st.textContent='✅ PONTUAÇÃO REGISTRADA NA NUVEM!';
+  }else{
+   ic2.className='sv-ic';ic2.textContent='⏳';
+   ic3.className='sv-ic';ic3.textContent='⏳';
+   bar.style.width='100%';
+   cnt.textContent='💾';
+   st.textContent=hasCloud?'SALVO NO DISPOSITIVO — O JOGO ENVIA SOZINHO QUANDO A INTERNET VOLTAR ☁️':'SALVO NESTE DISPOSITIVO (SEM NUVEM CONFIGURADA)';
+  }
+  setTimeout(()=>{closeModal('modal-save');showResult(win,duration,sentOk)},1300);
+ })();
 }
-function showResult(win,duration){
+function showResult(win,duration,sentOk){
  const pos=sortedRanking().findIndex(r=>r.id===lastRecId)+1;
  el('ov-emoji').textContent=win?'🏆':'💀';
  el('ov-title').textContent=win?'AS 5 FASES FORAM CONQUISTADAS!':'GAME OVER!';
@@ -1135,6 +1185,11 @@ function showResult(win,duration){
  el('ov-coins').textContent=coinsGot;
  el('ov-streak').textContent=streakBest;
  el('ov-time').textContent=duration+'s';
+ const note=el('ov-note');
+ note.style.display='block';
+ if(sentOk){note.style.background='#dff7dd';note.textContent='☁️ PONTUAÇÃO REGISTRADA NA NUVEM COM SUCESSO!'}
+ else if(cloudURL()){note.style.background='#fff3bf';note.textContent='💾 SALVO NO DISPOSITIVO — SERÁ ENVIADO AUTOMATICAMENTE QUANDO A INTERNET VOLTAR 📶'}
+ else{note.style.background='#fff3bf';note.textContent='💾 SALVO NESTE DISPOSITIVO (modo local)'}
  show('scr-over');
 }
 
@@ -1175,7 +1230,6 @@ el('btn-resume').onclick=togglePause;
 el('btn-restart').onclick=()=>startGame();
 el('btn-quit2').onclick=()=>{el('pauseOverlay').classList.remove('show');showConfirm('SAIR DA PARTIDA?','Sua pontuação atual não será salva no ranking.',()=>{running=false;cancelAnimationFrame(rafId);state='idle';show('scr-login')},'SAIR')};
 el('btn-sound').onclick=()=>{cfg.sound=!cfg.sound;saveCfg();el('btn-sound').textContent=cfg.sound?'🔊':'🔇';toast(cfg.sound?'Som ligado 🔊':'Som desligado 🔇')};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')togglePause()});
 
 function frame(t){
  if(!running)return;
@@ -1365,11 +1419,11 @@ function drawMonster(x,y,frameN,sc){
 }
 
 /* ============================================================
-   RANKING PÚBLICO (com atualização manual e AUTO)
+   RANKING PÚBLICO — AUTO-ATUALIZAÇÃO (sem botões para o aluno)
 ============================================================ */
-async function renderPublicRank(skipSync){
- if(!skipSync&&cloudURL())el('rank-list').innerHTML='<p class="center sub pix" style="font-size:9px">🌐 BUSCANDO RANKING NA NUVEM…</p>';
- if(!skipSync)await syncNow();
+async function renderPublicRank(withSync){
+ if(withSync&&cloudURL())el('rank-list').innerHTML='<p class="center sub pix" style="font-size:9px">🌐 ATUALIZANDO RANKING…</p>';
+ if(withSync){await flushQueue(true);await syncNow();}
  const list=sortedRanking().slice(0,10);
  const medals=['🥇','🥈','🥉'];
  let html='';
@@ -1382,36 +1436,21 @@ async function renderPublicRank(skipSync){
  html+='</tbody></table></div>';
  el('rank-list').innerHTML=html;
  const up=el('rank-updated');
- if(up)up.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR')+(cloudURL()?' • ☁️ nuvem':' • 💾 local');
+ if(up){
+  const pend=pendingCount();
+  up.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR')
+   +(cloudURL()?' • ☁️ nuvem':' • 💾 local')
+   +(pend>0?' • 📤 '+pend+' pendente'+(pend>1?'s':'')+' na fila':'');
+ }
 }
-/* --- botão ATUALIZAR AGORA --- */
-el('btn-rank-refresh').onclick=async()=>{
- const b=el('btn-rank-refresh');
- b.disabled=true;const old=b.textContent;b.textContent='⏳ ATUALIZANDO…';
- const ok=await syncNow();
- await renderPublicRank(true);
- b.textContent=old;b.disabled=false;
- toast(ok?'✅ Ranking atualizado da nuvem!':'⚠️ Nuvem indisponível — mostrando dados locais.',ok?'ok':'err');
-};
-/* --- modo AUTO (tempo real, a cada 10s) --- */
-let autoTm=0;
-function setAuto(v){
- cfg.autoRank=v;saveCfg();
- const b=el('btn-rank-auto');
- b.textContent='⏱ AUTO: '+(v?'ON 🟢':'OFF');
- b.className='btn sm '+(v?'green':'teal');
- if(v&&!autoTm)autoTm=setInterval(autoTick,10000);
- if(!v&&autoTm){clearInterval(autoTm);autoTm=0;}
-}
-function autoTick(){
+/* auto-refresh de 10s enquanto a tela do ranking estiver visível */
+setInterval(async()=>{
  if(!el('scr-rank').classList.contains('active'))return;
- syncNow().then(ok=>{if(ok)renderPublicRank(true);});
-}
-el('btn-rank-auto').onclick=()=>{
- setAuto(!cfg.autoRank);
- toast(cfg.autoRank?'⏱ Modo AUTO ligado — atualiza a cada 10s!':'⏱ Modo AUTO desligado.',cfg.autoRank?'ok':'');
-};
-el('btn-ov-rank').onclick=()=>{renderPublicRank();show('scr-rank')};
+ await flushQueue(true);
+ await syncNow();
+ await renderPublicRank(false);
+},10000);
+el('btn-ov-rank').onclick=()=>{renderPublicRank(true);show('scr-rank')};
 el('btn-rank-home').onclick=()=>show('scr-login');
 el('btn-rank-play').onclick=()=>{if(player)startGame();else show('scr-login')};
 el('btn-ov-home').onclick=()=>show('scr-login');
@@ -1420,6 +1459,7 @@ el('btn-again').onclick=startGame;
 
 /* ============================================================
    ÁREA DO PROFESSOR
+   (botões de atualização + filtros SÉRIE e TURMA em cascata)
 ============================================================ */
 el('btn-teacher').onclick=()=>{el('inp-pass').value='';el('pass-err').classList.remove('show');openModal('modal-pass');setTimeout(()=>el('inp-pass').focus(),80)};
 el('btn-pass-cancel').onclick=()=>closeModal('modal-pass');
@@ -1435,26 +1475,56 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
  t.classList.add('active');el(t.dataset.tab).classList.add('active');
 });
+/* ---------- FILTROS: SÉRIE + TURMA (cascata) + busca ---------- */
 function filteredRanked(){
- const turma=el('f-turma').value,busca=el('f-busca').value.trim().toLowerCase();
- return sortedRanking().filter(r=>(turma===''||r.turma===turma)&&(!busca||r.name.toLowerCase().includes(busca)));
+ const serie=el('f-serie').value,turma=el('f-turma').value,busca=el('f-busca').value.trim().toLowerCase();
+ return sortedRanking().filter(r=>
+  (serie===''||r.serie===serie)&&
+  (turma===''||r.turma===turma)&&
+  (!busca||r.name.toLowerCase().includes(busca))
+ );
+}
+/* estatísticas + tabela sempre refletem os filtros escolhidos */
+function refreshRankViews(){
+ const vis=filteredRanked();
+ el('st-games').textContent=vis.length;
+ el('st-players').textContent=new Set(vis.map(r=>r.name+'|'+r.turma)).size;
+ el('st-avg').textContent=vis.length?Math.round(vis.reduce((s,r)=>s+r.score,0)/vis.length):0;
+ el('st-best').textContent=vis.length?Math.max(...vis.map(r=>r.score)):0;
+ renderRankTable();
+}
+function updatePendingBtn(){
+ const b=el('btn-panel-pending'),n=pendingCount();
+ b.textContent='📤 ENVIAR PENDENTES ('+n+')';
+ b.disabled=(n===0);
 }
 function drawPanel(){
  const all=load(K.rank)||[];
- const sel=el('f-turma'),cur=sel.value;
- sel.innerHTML='<option value="">Todas as turmas</option>'+[...new Set(all.map(r=>r.turma))].sort().map(t=>'<option '+(t===cur?'selected':'')+'>'+esc(t)+'</option>').join('');
- el('st-games').textContent=all.length;
- el('st-players').textContent=new Set(all.map(r=>r.name+'|'+r.turma)).size;
- el('st-avg').textContent=all.length?Math.round(all.reduce((s,r)=>s+r.score,0)/all.length):0;
- el('st-best').textContent=all.length?Math.max(...all.map(r=>r.score)):0;
- renderRankTable();renderQsList();
+ const selS=el('f-serie'),selT=el('f-turma');
+ const curS=selS.value,curT=selT.value;
+ /* séries presentes nos registros, em ordem pedagógica */
+ const order=['6º Ano','7º Ano','8º Ano','9º Ano','1º Ano','2º Ano','3º Ano'];
+ const series=[...new Set(all.map(r=>r.serie))].sort((a,b)=>{
+   const ia=order.indexOf(a),ib=order.indexOf(b);
+   return (ia<0?99:ia)-(ib<0?99:ib);
+ });
+ selS.innerHTML='<option value="">Todas as séries</option>'+series.map(s=>'<option '+(s===curS?'selected':'')+'>'+esc(s)+'</option>').join('');
+ if(!series.includes(curS))selS.value='';
+ /* cascata: mostra apenas as turmas da série selecionada */
+ const base=selS.value?all.filter(r=>r.serie===selS.value):all;
+ const turmas=[...new Set(base.map(r=>r.turma))].sort();
+ selT.innerHTML='<option value="">Todas as turmas</option>'+turmas.map(t=>'<option '+(t===curT?'selected':'')+'>'+esc(t)+'</option>').join('');
+ if(!turmas.includes(curT))selT.value='';
+ refreshRankViews();renderQsList();
  el('cfg-count').value=cfg.count;el('cfg-sound').checked=cfg.sound;
  el('cfg-sheet-url').value=cfg.sheetUrl||'';
+ updatePendingBtn();
 }
 async function renderPanel(){
  drawPanel();
  if(cloudURL()){
   el('cloud-status').textContent='🌐 Sincronizando com a nuvem…';
+  await flushQueue(true);
   const ok=await syncNow();
   el('cloud-status').textContent=ok?'🟢 Conectado à nuvem (Google Sheets)':'🔴 Falha na conexão — usando dados locais';
   drawPanel();
@@ -1466,16 +1536,26 @@ function renderRankTable(){
  const rows=filteredRanked();
  el('rank-body').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+(i+1)+'º</td><td>'+esc(r.name)+'</td><td>'+esc(r.serie)+'</td><td>'+esc(r.turma)+'</td><td>'+(r.phase?r.phase+'/'+NP:'—')+'</td><td><b>'+r.score+'</b></td><td>'+r.correct+'/'+r.total+'</td><td>'+(r.coins||0)+'</td><td>'+(r.streakBest||0)+'</td><td>'+r.duration+'s</td><td>'+(r.win?'🏆 Vitória':'💀 Game Over')+'</td><td>'+esc(r.date)+'</td></tr>').join(''):'<tr><td colspan="12" class="center sub">Nenhum registro.</td></tr>';
 }
-el('f-turma').onchange=renderRankTable;
-el('f-busca').oninput=renderRankTable;
-/* --- botão atualizar do painel --- */
+/* eventos dos filtros */
+el('f-serie').onchange=()=>drawPanel();   /* repopula as turmas em cascata */
+el('f-turma').onchange=refreshRankViews;
+el('f-busca').oninput=refreshRankViews;
+/* botões de atualização — SOMENTE no painel do professor */
 el('btn-panel-refresh').onclick=async()=>{
  const b=el('btn-panel-refresh');
- b.disabled=true;const old=b.textContent;b.textContent='⏳ …';
+ b.disabled=true;const old=b.textContent;b.textContent='⏳ ATUALIZANDO…';
  const ok=await syncNow();
  drawPanel();
  b.textContent=old;b.disabled=false;
  toast(ok?'✅ Dados atualizados da nuvem!':'⚠️ Nuvem indisponível.',ok?'ok':'err');
+};
+el('btn-panel-pending').onclick=async()=>{
+ const b=el('btn-panel-pending');
+ b.disabled=true;const old=b.textContent;b.textContent='⏳ ENVIANDO…';
+ const n=await flushQueue(false);
+ if(n>0)await syncNow();
+ drawPanel();
+ toast(n>0?('☁️ '+n+' resultado(s) enviado(s) da fila!'):(pendingCount()>0?'⚠️ Ainda sem conexão — a fila tentará sozinha.':'Nada pendente. Tudo sincronizado!'),n>0?'ok':'err');
 };
 function downloadBlob(content,filename,mime){
  const a=document.createElement('a');
@@ -1483,6 +1563,7 @@ function downloadBlob(content,filename,mime){
  a.download=filename;document.body.appendChild(a);a.click();
  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},400);
 }
+/* exportações respeitam os filtros (usam filteredRanked) */
 const HEAD=['Posição','Nome','Série','Turma','Fase','Pontos','Acertos','Total questões','Moedas','Melhor sequência','Tempo (s)','Resultado','Progresso %','Data'];
 el('btn-csv').onclick=()=>{
  const rows=filteredRanked();
@@ -1501,9 +1582,9 @@ el('btn-xls').onclick=()=>{
  toast('Excel exportado! 📊','ok');
 };
 el('btn-clear-rank').onclick=()=>showConfirm('LIMPAR RANKING?','Os resultados locais E da planilha do Google serão apagados permanentemente.',()=>{
- save(K.rank,[]);
+ save(K.rank,[]);save(K.pending,[]);
  cloudClear().then(ok=>{
-  renderPanel();
+  drawPanel();
   toast(ok?'Ranking limpo (local + nuvem).':'Ranking local limpo (nuvem falhou).',ok?'ok':'err');
  });
 },'APAGAR');
@@ -1589,7 +1670,7 @@ el('btn-test-cloud').onclick=async()=>{
  if(!u){toast('Cole a URL do Apps Script primeiro!','err');return}
  toast('Testando conexão…');
  try{
-  const r=await fetch(u+'?action=load');
+  const r=await fetchTO(u+'?action=load',8000);
   const j=await r.json();
   if(j&&j.ok){toast('🟢 Conexão OK! Registros na nuvem: '+((j.list||[]).length),'ok');el('cloud-status').textContent='🟢 Conectado à nuvem (Google Sheets)'}
   else toast('🔴 A URL respondeu, mas com erro. Refaça a implantação.','err');
@@ -1598,10 +1679,10 @@ el('btn-test-cloud').onclick=async()=>{
  }
 };
 el('btn-reset-qs').onclick=()=>showConfirm('RESTAURAR QUESTÕES?','O banco volta às 40 questões originais de Geometria.',()=>{customQ=null;localStorage.removeItem(K.q);renderQsList();toast('Restauradas!','ok')},'RESTAURAR');
-el('btn-wipe').onclick=()=>showConfirm('APAGAR TUDO?','Ranking local, questões e ajustes deste navegador serão apagados. A planilha da nuvem NÃO é apagada por aqui.',()=>{[K.rank,K.q,K.cfg].forEach(k=>localStorage.removeItem(k));cfg=Object.assign({},DEFAULTS);customQ=null;setAuto(false);toast('Tudo apagado!','ok');setTimeout(()=>location.reload(),800)},'APAGAR TUDO');
+el('btn-wipe').onclick=()=>showConfirm('APAGAR TUDO?','Ranking local, fila pendente, questões e ajustes deste navegador serão apagados. A planilha da nuvem NÃO é apagada por aqui.',()=>{[K.rank,K.q,K.cfg,K.pending].forEach(k=>localStorage.removeItem(k));cfg=Object.assign({},DEFAULTS);customQ=null;toast('Tudo apagado!','ok');setTimeout(()=>location.reload(),800)},'APAGAR TUDO');
 el('btn-sound').textContent=cfg.sound?'🔊':'🔇';
-/* inicia o modo AUTO conforme salvo (persiste entre sessões) */
-setAuto(!!cfg.autoRank);
+/* ao carregar a página: tenta reenviar o que ficou pendente de sessões anteriores */
+flushQueue(true);
 </script>
 </body>
 </html>
